@@ -17,12 +17,12 @@ RUN npm ci
 # Copy API source code and Prisma schema
 COPY apps/api ./apps/api/
 
-# Build TypeScript
+# Generate Prisma Client BEFORE building TypeScript (code imports it)
 WORKDIR /app/apps/api
-RUN npm run build:ts
-
-# Generate Prisma Client
 RUN npx prisma generate
+
+# Build TypeScript
+RUN npm run build:ts
 
 # Stage 2: Production image
 FROM node:22-alpine
