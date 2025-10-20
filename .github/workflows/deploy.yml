@@ -120,7 +120,7 @@ jobs:
             docker compose -f docker-compose.prod.yml pull
             
             # Run Prisma migrations (applies pending migrations only)
-            docker compose -f docker-compose.prod.yml run --rm api npx prisma migrate deploy
+            docker compose -f docker-compose.prod.yml run --rm api npx prisma migrate deploy --schema=./apps/api/prisma/schema.prisma
             
             # Start all services with fresh containers
             echo "Starting all services..."
