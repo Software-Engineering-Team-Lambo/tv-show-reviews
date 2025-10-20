@@ -32,6 +32,7 @@ WORKDIR /app
 # Copy root package files
 COPY package*.json ./
 COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
 
 # Install production dependencies only
 RUN npm ci --omit=dev
@@ -43,9 +44,6 @@ COPY apps/api/prisma ./apps/api/prisma/
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY --from=builder /app/apps/api/generated ./apps/api/generated
 
-# Set working directory to API
-WORKDIR /app/apps/api
-
 # Expose Fastify port
 EXPOSE 3000
 
@@ -53,5 +51,6 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Run the app with production start script
-CMD ["npm", "run", "start:prod"]
+# Run the app using workspace-aware npm command from root
+WORKDIR /app
+CMD ["npm", "run", "start:prod", "-w", "api"]
