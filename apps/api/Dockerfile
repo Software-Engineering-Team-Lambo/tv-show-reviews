@@ -53,5 +53,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Run the app
-CMD ["node", "dist/app.js"]
+# Run the app with Fastify CLI (binds to 0.0.0.0:3000 in production)
+CMD ["npx", "fastify", "start", "-l", "info", "-a", "0.0.0.0", "dist/app.js"]
