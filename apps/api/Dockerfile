@@ -1,20 +1,24 @@
 # Multi-stage build for production
+# This Dockerfile is designed to be built from the monorepo root
+# Build command: docker build -f apps/api/Dockerfile .
+
 # Stage 1: Build TypeScript
 FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
+# Copy root package files (for workspace support)
 COPY package*.json ./
-COPY prisma ./prisma/
+COPY apps/api/package.json ./apps/api/
 
-# Install all dependencies (including dev deps for build)
+# Install dependencies for the entire workspace
 RUN npm ci
 
-# Copy source code
-COPY . .
+# Copy API source code and Prisma schema
+COPY apps/api ./apps/api/
 
 # Build TypeScript
+WORKDIR /app/apps/api
 RUN npm run build:ts
 
 # Generate Prisma Client
@@ -25,16 +29,22 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# Copy package files
+# Copy root package files
 COPY package*.json ./
-COPY prisma ./prisma/
+COPY apps/api/package.json ./apps/api/
 
 # Install production dependencies only
 RUN npm ci --omit=dev
 
+# Copy Prisma schema for runtime
+COPY apps/api/prisma ./apps/api/prisma/
+
 # Copy built code from builder stage
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/generated ./generated
+COPY --from=builder /app/apps/api/dist ./apps/api/dist
+COPY --from=builder /app/apps/api/generated ./apps/api/generated
+
+# Set working directory to API
+WORKDIR /app/apps/api
 
 # Expose Fastify port
 EXPOSE 3000
