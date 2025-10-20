@@ -1,3 +1,11 @@
 node_modules/
 .idea/
 .env
+.env.production
+.env.local
+.env.*.local
+
+# SSH keys
+*.pem
+*_deploy_key
+*_deploy_key.pub

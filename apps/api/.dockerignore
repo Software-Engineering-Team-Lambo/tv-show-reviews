@@ -1,0 +1,44 @@
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Development
+*.dev
+.env
+.env.local
+.env.*.local
+
+# Tests
+test/
+*.test.ts
+*.spec.ts
+coverage/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Git
+.git/
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+
+# CI/CD (not needed in container)
+.github/
+
+# TypeScript source (we only need compiled JS)
+# Commented out because we build inside Docker
+# src/
+# *.ts
+# tsconfig.json
+
+# Other
+.DS_Store
+Thumbs.db

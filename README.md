@@ -1,4 +1,4 @@
-# TV Show Reviews
+# Couch Critics
 This uses Fastify and Prisma for the backend API. The frontend is a Single Page Application (SPA) built with Vue and Vite. Typescript is used throughout for type safety and better autocompletion.
 
 ## Getting Started
