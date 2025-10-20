@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: tvshows-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./apps/web/dist:/srv/web:ro  # Vue SPA static files
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - caddy_net
+    depends_on:
+      - api
+
+  api:
+    image: ghcr.io/software-engineering-team-lambo/tv-show-reviews-api:latest
+    container_name: tvshows-api
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
+    networks:
+      - caddy_net
+      - db_net
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  db:
+    image: mysql:8.0
+    container_name: tvshows-db
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - db_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Optional: Prisma Studio for debugging (comment out for production)
+  # Access at http://your-domain.com:5555
+  # studio:
+  #   image: ghcr.io/software-engineering-team-lambo/tv-show-reviews-api:latest
+  #   container_name: tvshows-studio
+  #   restart: "no"
+  #   env_file:
+  #     - .env.production
+  #   environment:
+  #     DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
+  #   ports:
+  #     - "5555:5555"
+  #   networks:
+  #     - db_net
+  #   command: npx prisma studio --browser none --port 5555
+  #   depends_on:
+  #     - db
+
+networks:
+  caddy_net:
+    name: caddy_network
+  db_net:
+    name: database_network
+
+volumes:
+  caddy_data:
+    name: tvshows_caddy_data
+  caddy_config:
+    name: tvshows_caddy_config
+  mysql_data:
+    name: tvshows_mysql_data

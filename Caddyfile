@@ -1,0 +1,29 @@
+{
+    email josephc6@umbc.edu
+}
+
+couchcritics.org {
+    # Serve Vue SPA static files
+    root * /srv/web
+    encode gzip
+    
+    # Try to serve static files, fallback to index.html for SPA routing
+    try_files {path} /index.html
+    file_server
+
+    # Proxy API requests to Fastify backend
+    handle /api/* {
+        reverse_proxy api:3000
+    }
+
+    # Logs
+    log {
+        output file /data/access.log
+        format json
+    }
+}
+
+# Optional: Redirect www to non-www
+www.couchcritics.org {
+    redir https://couchcritics.zvcx.me{uri} permanent
+}
