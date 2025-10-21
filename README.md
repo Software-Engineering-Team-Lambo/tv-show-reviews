@@ -8,6 +8,7 @@ This uses Fastify and Prisma for the backend API. The frontend is a Single Page 
     cd tv-show-reviews
     ```
 2. Install Node.js 24.x or later (use [NVM](https://github.com/nvm-sh/nvm) for easy version management, then run `nvm use`)
+    Otherwise you can just install Node 24 if that's easier [nodejs.org](https://nodejs.org/).
     
 3. Install dependencies:
     ```bash
@@ -33,16 +34,20 @@ This uses Fastify and Prisma for the backend API. The frontend is a Single Page 
         ```
     - **Option B (Local MySQL):** Install MySQL locally, create a database, then set `DATABASE_URL` in `apps/api/.env` (look at .env.example for format, or copy to .env and modify as needed)
 
+
+5. After database is set up do the following:
+
     - For simplicity in development, use the database user with full privileges (e.g., root) to avoid permission issues in Prisma migrations.
     - Run Prisma migrations:
         ```bash
-        npx prisma migrate dev --name init --schema=apps/api/prisma/schema.prisma
+        cd apps/api
+        npx prisma migrate dev --name init
         ```
     - Generate Prisma client:
         ```bash
-        npx prisma generate --schema=apps/api/prisma/schema.prisma
+        npx prisma generate
         ```
-5. Start the development servers:
+6. Start the development servers:
     ``` bash
     # runs the backend API and frontend dev server concurrently
     # /api on the frontend is proxied to the backend
