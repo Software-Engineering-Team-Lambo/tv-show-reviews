@@ -123,10 +123,13 @@ jobs:
             
             # Run Prisma migrations (applies pending migrations only)
             echo "Running database migrations..."
-            docker compose -f docker-compose.prod.yml --env-file .env.production run --rm -T api \
-              npx prisma migrate deploy --schema=./apps/api/prisma/schema.prisma
-            
-            echo "✅ Migrations completed successfully"
+            if docker compose -f docker-compose.prod.yml --env-file .env.production run --rm -T api \
+              npx prisma migrate deploy --schema=./apps/api/prisma/schema.prisma; then
+              echo "✅ Migrations completed successfully"
+            else
+              echo "❌ Migration failed"
+              exit 1
+            fi
             
             # Start all services with fresh containers
             echo "Starting all services..."
