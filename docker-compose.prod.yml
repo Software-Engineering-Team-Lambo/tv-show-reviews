@@ -17,7 +17,8 @@ services:
     networks:
       - caddy_net
     depends_on:
-      - api
+      api:
+        condition: service_healthy
 
   api:
     image: ghcr.io/software-engineering-team-lambo/tv-show-reviews-api:latest
