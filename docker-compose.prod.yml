@@ -24,10 +24,9 @@ services:
     image: ghcr.io/software-engineering-team-lambo/tv-show-reviews-api:latest
     container_name: tvshows-api
     restart: unless-stopped
-    env_file:
-      - .env.production
     environment:
       NODE_ENV: production
+      DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
     networks:
       - caddy_net
       - db_net
@@ -45,8 +44,11 @@ services:
     image: mysql:8.0
     container_name: tvshows-db
     restart: unless-stopped
-    env_file:
-      - .env.production
+    environment:
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
     volumes:
       - mysql_data:/var/lib/mysql
     networks:
@@ -64,8 +66,6 @@ services:
   #   image: ghcr.io/software-engineering-team-lambo/tv-show-reviews-api:latest
   #   container_name: tvshows-studio
   #   restart: "no"
-  #   env_file:
-  #     - .env.production
   #   environment:
   #     DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
   #   ports:
