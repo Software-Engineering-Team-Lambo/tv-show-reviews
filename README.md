@@ -1,77 +1,110 @@
 # Couch Critics
-This uses Fastify and Prisma for the backend API. The frontend is a Single Page Application (SPA) built with Vue and Vite. Typescript is used throughout for type safety and better autocompletion.
+A TV show review app built with Vue, Fastify, and Prisma. Rate and review your favorite shows!
+
+## What's Inside
+- **Backend:** Fastify API with Prisma (MySQL database)
+- **Frontend:** Vue 3 with Vite for fast development
+- Everything is written in TypeScript
 
 ## Getting Started
-1. Clone the repository:
-    ```bash
-    git clone https://github.com/Software-Engineering-Team-Lambo/tv-show-reviews
-    cd tv-show-reviews
-    ```
-2. Install Node.js 24.x or later (use [NVM](https://github.com/nvm-sh/nvm) for easy version management, then run `nvm use`)
-    Otherwise you can just install Node 24 if that's easier [nodejs.org](https://nodejs.org/).
-    
-3. Install dependencies:
-    ```bash
-    npm install
-    ```
-4. Set up the database
-    - **Option A (Docker - recommended):**
 
-        For this to work, you need [Docker](https://www.docker.com/get-started/) installed.
-        ```bash
-        cp .env.example .env                    # adjust MySQL credentials for security
-        ```
-        Now, edit the .env file to set secure passwords.
-        ```bash
-        docker compose up -d                    # start MySQL container
-        cp apps/api/.env.example apps/api/.env  # copy backend env file
-        ```
-        Set `DATABASE_URL` in `apps/api/.env` to match your `.env` credentials (e.g., `mysql://username:password@127.0.0.1:3306/tv_ratings`)
-        
-        When not working on the project, stop the MySQL container with:
-        ```bash
-        docker compose down
-        ```
-    - **Option B (Local MySQL):** Install MySQL locally, create a database, then set `DATABASE_URL` in `apps/api/.env` (look at .env.example for format, or copy to .env and modify as needed)
-
-
-5. After database is set up do the following:
-
-    - For simplicity in development, use the database user with full privileges (e.g., root) to avoid permission issues in Prisma migrations.
-    - Run Prisma migrations:
-        ```bash
-        cd apps/api
-        npx prisma migrate dev --name init
-        ```
-    - Generate Prisma client:
-        ```bash
-        npx prisma generate
-        ```
-6. Start the development servers:
-    ``` bash
-    # runs the backend API and frontend dev server concurrently
-    # /api on the frontend is proxied to the backend
-    npm run dev
-    ```
-    You can also run the backend and frontend separately:
-    ```bash
-    # Start the backend API server
-    npm run dev -w=api
-    # Start the frontend dev server
-    npm run dev -w=web
-6. Start writing code!
-
-Both the backend and frontend support hot-reloading, so changes will reflect immediately. Database schema changes will require running Prisma migrations and regenerating the client, however.
-
-When you start the frontend, it'll give you a link to open in the browser.
-
-## Tech Stack
-- **Backend:** Fastify + Prisma (MySQL) in `apps/api` — [Prisma docs](https://www.prisma.io/docs/), [Fastify docs](https://www.fastify.io/docs/latest/)
-- **Frontend:** Vue 3 + Vite in `apps/web` — [Vite docs](https://vitejs.dev/), [Vue docs](https://vuejs.org/)
-
-## Workspace Commands
-Use `-w` flag to target specific workspace (api or web):
+### 1. Clone and Install
 ```bash
-npm install -w=api <package>  # install package for backend
-npm run dev -w=web            # run frontend only
+git clone https://github.com/Software-Engineering-Team-Lambo/tv-show-reviews
+cd tv-show-reviews
+npm install
+```
+
+### 2. Install Node.js
+You need Node.js 24 or later:
+- **Easy way with NVM:** 
+  - **macOS/Linux:** Install [NVM](https://github.com/nvm-sh/nvm), then run `nvm install 24` followed by `nvm use`
+  - **Windows:** Install [NVM for Windows](https://github.com/coreybutler/nvm-windows), then run `nvm install 24` followed by `nvm use`
+- **Direct install:** Download from [nodejs.org](https://nodejs.org/)
+
+### 3. Set Up the Database
+Choose one option:
+
+#### Option A: Docker (Recommended - Easier!)
+1. Install [Docker](https://www.docker.com/get-started/) if you haven't already
+2. Copy the example environment file and edit it:
+   ```bash
+   cp .env.example .env
+   ```
+   Open `.env` and set secure passwords for MySQL
+3. Start the database:
+   ```bash
+   docker compose up -d
+   ```
+4. Set up the API environment:
+   ```bash
+   cp apps/api/.env.example apps/api/.env
+   ```
+   Open `apps/api/.env` and update `DATABASE_URL` to match your credentials:
+   ```
+   DATABASE_URL="mysql://username:password@127.0.0.1:3306/tv_ratings"
+   ```
+
+💡 **Tip:** When you're done working, stop the database with `docker compose down`
+
+#### Option B: Local MySQL
+1. Install MySQL on your computer
+2. Create a database called `tv_ratings`
+3. Copy and update the API environment file:
+   ```bash
+   cp apps/api/.env.example apps/api/.env
+   ```
+4. Update `DATABASE_URL` in `apps/api/.env` with your MySQL credentials
+
+### 4. Initialize the Database
+```bash
+cd apps/api
+npx prisma migrate dev --name init
+npx prisma generate
+cd ../..
+```
+
+### 5. Start Developing! 🚀
+```bash
+npm run dev
+```
+
+This starts both the backend API and frontend. Open the link shown in your terminal to see the app!
+
+**Want to run them separately?**
+```bash
+npm run dev -w=api   # Backend only
+npm run dev -w=web   # Frontend only
+```
+
+## Development Tips
+
+### Hot Reloading
+Your changes appear instantly! Just save and see them in the browser. ✨
+
+If you change the database schema (`apps/api/prisma/schema.prisma`), you'll need to:
+```bash
+cd apps/api
+npx prisma migrate dev --name describe_your_change
+npx prisma generate
+```
+
+### Installing Packages
+Use the `-w` flag to install packages for specific parts:
+```bash
+npm install -w=api <package-name>   # For backend
+npm install -w=web <package-name>   # For frontend
+```
+
+## Learn More
+- **Prisma:** [prisma.io/docs](https://www.prisma.io/docs/)
+- **Fastify:** [fastify.io/docs](https://www.fastify.io/docs/latest/)
+- **Vue 3:** [vuejs.org](https://vuejs.org/)
+- **Vite:** [vitejs.dev](https://vitejs.dev/)
+
+## Project Structure
+```
+apps/
+  api/       # Backend API (Fastify + Prisma)
+  web/       # Frontend app (Vue + Vite)
 ```
