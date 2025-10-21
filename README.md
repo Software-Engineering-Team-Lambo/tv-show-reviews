@@ -58,7 +58,7 @@ This uses Fastify and Prisma for the backend API. The frontend is a Single Page 
     # Start the backend API server
     npm run dev -w=api
     # Start the frontend dev server
-    npm run dev -w=web
+    npm run dev -w= web
 6. Start writing code!
 
 Both the backend and frontend support hot-reloading, so changes will reflect immediately. Database schema changes will require running Prisma migrations and regenerating the client, however.
