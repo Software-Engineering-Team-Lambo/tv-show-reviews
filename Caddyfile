@@ -3,6 +3,11 @@
 }
 
 couchcritics.org {
+    # Proxy API requests FIRST (before SPA catch-all)
+    handle /api/* {
+        reverse_proxy api:3000
+    }
+
     # Serve Vue SPA static files
     root * /srv/web
     encode gzip
@@ -10,11 +15,6 @@ couchcritics.org {
     # Try to serve static files, fallback to index.html for SPA routing
     try_files {path} /index.html
     file_server
-
-    # Proxy API requests to Fastify backend
-    handle /api/* {
-        reverse_proxy api:3000
-    }
 
     # Logs
     log {
@@ -25,5 +25,5 @@ couchcritics.org {
 
 # Optional: Redirect www to non-www
 www.couchcritics.org {
-    redir https://couchcritics.zvcx.me{uri} permanent
+    redir https://couchcritics.org{uri} permanent
 }
