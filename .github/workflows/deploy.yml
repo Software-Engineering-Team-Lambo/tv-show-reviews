@@ -124,14 +124,14 @@ jobs:
             # Run Prisma migrations (applies pending migrations only)
             echo "Running database migrations..."
             docker compose -f docker-compose.prod.yml --env-file .env.production run --rm -T api \
-              npx prisma migrate deploy --schema=./apps/api/prisma/schema.prisma 2>&1 || exit 1
+              npx prisma migrate deploy --schema=./apps/api/prisma/schema.prisma < /dev/null
             
             echo "✅ Migrations completed successfully"
             echo "About to start services..."
             
             # Start all services with fresh containers
             echo "Starting all services..."
-            docker compose -f docker-compose.prod.yml --env-file .env.production up -d 2>&1 || exit 1
+            docker compose -f docker-compose.prod.yml --env-file .env.production up -d
             
             echo "✅ Services started"
             
@@ -154,5 +154,5 @@ jobs:
         run: |
           ssh -i ~/.ssh/deploy_key ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }} << 'ENDSSH'
             cd ~/tv-show-reviews
-            docker compose -f docker-compose.prod.yml ps
+            docker compose -f docker-compose.prod.yml --env-file .env.production ps
           ENDSSH
