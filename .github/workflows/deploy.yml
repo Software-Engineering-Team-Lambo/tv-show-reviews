@@ -120,22 +120,19 @@ jobs:
             # Pull latest Docker images
             echo "Pulling latest Docker images..."
             docker compose -f docker-compose.prod.yml --env-file .env.production pull
+            
             # Run Prisma migrations (applies pending migrations only)
             echo "Running database migrations..."
-            out=$(docker compose -f docker-compose.prod.yml run --rm api \
-            npx prisma migrate deploy --schema=./apps/api/prisma/schema.prisma 2>&1) || true
-            echo "$out"
-            if echo "$out" | grep -qE "No pending migrations|Already in sync"; then
-            echo "✅ No migrations needed"
-            else
-              echo "⚠️ Unexpected migrate exit; review output"
-              echo "$out" >&2
-              exit 1
-            fi
-
+            docker compose -f docker-compose.prod.yml --env-file .env.production run --rm -T api \
+              npx prisma migrate deploy --schema=./apps/api/prisma/schema.prisma
+            
+            echo "✅ Migrations completed successfully"
+            
             # Start all services with fresh containers
             echo "Starting all services..."
             docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+            
+            echo "✅ Services started"
             
             # Wait for containers to be ready
             sleep 5
