@@ -18,7 +18,7 @@
 
   "overrideCommand": false,
   "updateContentCommand": "npm install",
-  "postCreateCommand": "cd apps/api && npx prisma generate",
+  "postCreateCommand": "bash -c 'test -f apps/api/.env || cp apps/api/.env.example apps/api/.env' && cd apps/api && npx prisma generate",
 
   "customizations": {
     "vscode": {
@@ -59,7 +59,5 @@
 
   "remoteEnv": {
     "DATABASE_URL": "mysql://root:rootpass@db:3306/tv_ratings"
-  },
-
-  "initializeCommand": "test -f apps/api/.env || cp apps/api/.env.example apps/api/.env"
+  }
 }
