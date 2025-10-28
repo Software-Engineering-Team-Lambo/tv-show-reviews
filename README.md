@@ -11,6 +11,7 @@ A TV show review app built with Vue, Fastify, and Prisma. Rate and review your f
 ## Getting Started
 
 ### 🚀 Quick Start with Dev Container (Easiest!)
+
 #### If you use the dev container, you don't need to do the manual setup below. Just follow these steps:
 
 **Prerequisites:** Docker Desktop + VS Code with Dev Containers extension
@@ -20,7 +21,8 @@ A TV show review app built with Vue, Fastify, and Prisma. Rate and review your f
 3. Paste: `https://github.com/Software-Engineering-Team-Lambo/tv-show-reviews`
 4. Wait for setup (a few minutes first time)
 5. Run: `cd apps/api && npx prisma migrate dev --name init`
-6. Run: `npm run dev`
+6. Run: `cd ../..`
+7. Run: `npm run dev`
 
 **Done!** Everything else is automatic. See [.devcontainer/README.md](.devcontainer/README.md) for details.
 
