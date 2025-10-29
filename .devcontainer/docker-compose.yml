@@ -1,0 +1,28 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ..:/workspace:cached
+    command: sleep infinity
+    network_mode: service:db
+    env_file:
+      - ../apps/api/.env
+    environment:
+      # Override DATABASE_URL for containerized development
+      - DATABASE_URL=mysql://root:rootpass@localhost:3306/tv_ratings
+
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    volumes:
+      - mysql-data:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: tv_ratings
+      MYSQL_USER: couch_critics
+      MYSQL_PASSWORD: devpass
+
+volumes:
+  mysql-data:
