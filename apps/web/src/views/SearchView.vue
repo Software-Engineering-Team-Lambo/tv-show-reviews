@@ -78,7 +78,7 @@ onMounted(() => {
     }
 })
 
-const handleSearch = () => {
+const handleSearch = async () => {
     // TODO: Implement actual search logic
     console.log('Searching:', {
         query: searchQuery.value,
@@ -86,6 +86,32 @@ const handleSearch = () => {
         year: selectedYear.value,
         sortBy: sortBy.value,
     })
+
+    const response = await fetch('/api/search', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            query: searchQuery.value,
+        }),
+    });
+
+    const data = await response.json();
+
+    searchResults.value = [
+        {
+            id: data[0].id,
+            title: data[0].title,
+            description: data[0].description,
+            rating: "5",
+            year: "2024",
+            genre: "ertert",
+            image: "sfsdf",
+            reviews: "123",
+        }
+    ];
+
 }
 
 const clearFilters = () => {
