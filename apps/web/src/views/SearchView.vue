@@ -72,6 +72,7 @@ const searchResults = ref([
 onMounted(() => {
     if (route.query.q) {
         searchQuery.value = route.query.q as string
+        handleSearch()
     }
     if (route.query.genre) {
         selectedGenres.value = [route.query.genre as string]
