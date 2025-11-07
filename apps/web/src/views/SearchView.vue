@@ -104,11 +104,11 @@ const handleSearch = async () => {
             id: data[0].id,
             title: data[0].title,
             description: data[0].description,
-            rating: "5",
-            year: "2024",
-            genre: "ertert",
+            rating: 5,
+            year: 2024,
+            genre: ["ertert"],
             image: "sfsdf",
-            reviews: "123",
+            reviews: 123,
         }
     ];
 
