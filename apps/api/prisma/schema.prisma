@@ -27,7 +27,7 @@ model User {
 model Show {
   id          Int      @id @default(autoincrement())
   title       String
-  year        Int
+  year        Int?
   description String?  @db.Text
   seasons     Int?
   status      String?  // e.g., "Ongoing", "Ended"
