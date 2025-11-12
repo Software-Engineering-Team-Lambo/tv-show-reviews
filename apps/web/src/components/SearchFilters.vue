@@ -62,7 +62,7 @@ const handleClear = () => {
         <div>
             <label class="block text-sm font-medium mb-2">Genres</label>
             <MultiSelect v-model="localGenres" :options="genres" placeholder="Select genres" :maxSelectedLabels="2"
-                class="w-full" />
+                :showToggleAll="false" class="w-full" />
         </div>
 
         <!-- Year Filter -->
