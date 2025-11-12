@@ -1,32 +1,36 @@
 import { FastifyPluginAsync } from "fastify";
-import type { FastifyRequest } from "fastify";
+import { Static, Type } from "@sinclair/typebox";
 
-type SearchRequestBody = {
-  query: string;
-};
+// Define the schema
+const SearchBodySchema = Type.Object({
+  query: Type.String({ minLength: 1 }),
+});
 
-// this is just a demo route, you can delete it
-// just so you know how to add routes and how it works with the web app
+// Infer the TypeScript type from the schema
+type SearchBody = Static<typeof SearchBodySchema>;
+
 const search: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
-  fastify.post(
+  fastify.post<{ Body: SearchBody }>(
     "/api/search",
-    async function (
-      request: FastifyRequest<{ Body: SearchRequestBody }>,
-      reply
-    ) {
-      const body = request.body;
+    {
+      schema: {
+        body: SearchBodySchema,
+      },
+    },
+    async function (request, reply) {
+      const { query } = request.body;
 
       const results = await fastify.prisma.show.findMany({
         where: {
           OR: [
             {
               title: {
-                contains: body.query,
+                contains: query,
               },
             },
             {
               description: {
-                contains: body.query,
+                contains: query,
               },
             },
           ],
