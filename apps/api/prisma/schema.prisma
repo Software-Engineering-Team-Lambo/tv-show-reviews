@@ -26,10 +26,50 @@ model User {
 model Show {
   id          Int      @id @default(autoincrement())
   title       String
-  description String?
+  year        Int?
+  description String?  @db.Text
+  seasons     Int?
+  status      String?  // e.g., "Ongoing", "Ended"
   reviews     Review[]
+  genres      ShowGenre[]
+  cast        ShowCast[]
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Genre {
+  id    Int         @id @default(autoincrement())
+  name  String      @unique // e.g., "Drama", "Comedy", "Sci-Fi"
+  shows ShowGenre[]
+}
+
+model ShowGenre {
+  show    Show   @relation(fields: [showId], references: [id], onDelete: Cascade)
+  showId  Int
+  genre   Genre  @relation(fields: [genreId], references: [id], onDelete: Cascade)
+  genreId Int
+
+  @@id([showId, genreId])
+}
+
+model Actor {
+  id    Int        @id @default(autoincrement())
+  name  String
+  shows ShowCast[]
+  
+  createdAt DateTime @default(now())
+}
+
+model ShowCast {
+  show      Show   @relation(fields: [showId], references: [id], onDelete: Cascade)
+  showId    Int
+  actor     Actor  @relation(fields: [actorId], references: [id], onDelete: Cascade)
+  actorId   Int
+  role      String? // Optional: character name
+  order     Int?    // Optional: billing order (1 = lead, 2 = supporting, etc.)
+
+  @@id([showId, actorId])
 }
 
 model Review {
