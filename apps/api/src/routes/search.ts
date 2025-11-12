@@ -89,31 +89,45 @@ const search: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
         }
       })();
 
-      // Fetch results with genres included
-      const results = await fastify.prisma.show.findMany({
-        where: whereClause,
-        include: {
-          genres: {
-            include: {
-              genre: true,
+      // Run both queries in parallel for better performance
+      const [results, ratingAggregates] = await Promise.all([
+        // Fetch results with genres and aggregated review data
+        fastify.prisma.show.findMany({
+          where: whereClause,
+          include: {
+            genres: {
+              include: {
+                genre: true,
+              },
+            },
+            _count: {
+              select: {
+                reviews: true,
+              },
             },
           },
-          reviews: {
-            select: {
-              rating: true,
-            },
+          orderBy,
+        }),
+        // Get average ratings for all matching shows in parallel
+        fastify.prisma.review.groupBy({
+          by: ["showId"],
+          where: {
+            show: whereClause,
           },
-        },
-        orderBy,
-      });
+          _avg: {
+            rating: true,
+          },
+        }),
+      ]);
+
+      // Create a map for quick lookup
+      const ratingMap = new Map(
+        ratingAggregates.map((agg) => [agg.showId, agg._avg.rating ?? 0])
+      );
 
       // Transform results to include calculated fields
       const transformedResults: SearchResult[] = results.map((show) => {
-        const avgRating =
-          show.reviews.length > 0
-            ? show.reviews.reduce((sum, r) => sum + r.rating, 0) /
-              show.reviews.length
-            : 0;
+        const avgRating = ratingMap.get(show.id) ?? 0;
 
         return {
           id: show.id,
@@ -122,7 +136,7 @@ const search: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
           year: show.year,
           genres: show.genres.map((g) => g.genre.name),
           rating: avgRating,
-          reviewCount: show.reviews.length,
+          reviewCount: show._count.reviews,
           createdAt: show.createdAt,
           updatedAt: show.updatedAt,
         };
@@ -139,28 +153,30 @@ const search: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
 
   // GET /api/search/filters - Get available genres and years
   fastify.get("/api/search/filters", async function (request, reply) {
-    // Get all genres
-    const genres = await fastify.prisma.genre.findMany({
-      orderBy: {
-        name: "asc",
-      },
-    });
-
-    // Get unique years from shows
-    const years = await fastify.prisma.show.findMany({
-      where: {
-        year: {
-          not: null,
+    // Run both queries in parallel for better performance
+    const [genres, years] = await Promise.all([
+      // Get all genres
+      fastify.prisma.genre.findMany({
+        orderBy: {
+          name: "asc",
         },
-      },
-      select: {
-        year: true,
-      },
-      distinct: ["year"],
-      orderBy: {
-        year: "desc",
-      },
-    });
+      }),
+      // Get unique years from shows
+      fastify.prisma.show.findMany({
+        where: {
+          year: {
+            not: null,
+          },
+        },
+        select: {
+          year: true,
+        },
+        distinct: ["year"],
+        orderBy: {
+          year: "desc",
+        },
+      }),
+    ]);
 
     const filterOptions: FilterOptions = {
       genres: genres.map((g) => g.name),
