@@ -49,7 +49,7 @@ export interface Review {
 
 // Search API types
 export interface SearchRequestBody {
-  query: string
+  query?: string
   genres?: string[]
   year?: number
   sortBy?: 'rating' | 'reviews' | 'year' | 'title'

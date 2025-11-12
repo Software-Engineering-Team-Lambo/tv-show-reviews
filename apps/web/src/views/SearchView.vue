@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Card from 'primevue/card'
 import Skeleton from 'primevue/skeleton'
 import SearchHeader from '@/components/SearchHeader.vue'
@@ -10,6 +10,7 @@ import SearchResults from '@/components/SearchResults.vue'
 import type { ShowCardData, SearchRequestBody, SearchResult, FilterOptions } from '@/types/api'
 
 const route = useRoute()
+const router = useRouter()
 
 const searchQuery = ref('')
 const selectedGenres = ref<string[]>([])
@@ -30,11 +31,13 @@ const sortOptions = ref([
 
 const searchResults = ref<ShowCardData[]>([])
 
-// Watch for route query changes (when searching from header)
+// Watch for route query changes (when searching from header or back/forward nav)
 watch(() => route.query.q, (newQuery) => {
-    if (newQuery && typeof newQuery === 'string') {
+    if (newQuery && typeof newQuery === 'string' && newQuery !== searchQuery.value) {
         searchQuery.value = newQuery
         handleSearch()
+    } else if (!newQuery && searchQuery.value) {
+        searchQuery.value = ''
     }
 })
 
@@ -42,13 +45,17 @@ onMounted(async () => {
     // Load available filters from the API
     await loadFilters()
 
-    // Check for query params
+    // Check for query params and sync with URL
     if (route.query.q) {
         searchQuery.value = route.query.q as string
-        handleSearch()
     }
     if (route.query.genre) {
         selectedGenres.value = [route.query.genre as string]
+    }
+
+    // Auto-search if we have query params
+    if (route.query.q || route.query.genre) {
+        handleSearch()
     }
 })
 
@@ -67,15 +74,34 @@ const loadFilters = async () => {
 }
 
 const handleSearch = async () => {
-    if (!searchQuery.value.trim()) return
+    // Allow search with just filters (no text required)
+    const hasQuery = searchQuery.value.trim().length > 0
+    const hasFilters = selectedGenres.value.length > 0 || selectedYear.value !== null
+
+    // Require at least a query or filters
+    if (!hasQuery && !hasFilters) {
+        searchResults.value = []
+        hasSearched.value = false
+        return
+    }
+
+    // Update URL query params
+    const query = searchQuery.value.trim()
+    router.push({
+        name: 'search',
+        query: query ? { q: query } : {}
+    })
 
     isLoading.value = true
     hasSearched.value = true
 
     try {
         // Build the request body with all filters
-        const requestBody: SearchRequestBody = {
-            query: searchQuery.value,
+        const requestBody: SearchRequestBody = {}
+
+        // Add query if provided
+        if (hasQuery) {
+            requestBody.query = searchQuery.value
         }
 
         // Add optional filters if they have values
@@ -126,12 +152,22 @@ const clearFilters = () => {
     selectedGenres.value = []
     selectedYear.value = null
     sortBy.value = 'rating'
+    searchResults.value = []
+    hasSearched.value = false
 }
 
-// Watch for filter changes and auto-search if we already have a query
+// Watch for filter changes and auto-search
 watch([selectedGenres, selectedYear, sortBy], () => {
-    if (hasSearched.value && searchQuery.value.trim()) {
+    const hasQuery = searchQuery.value.trim().length > 0
+    const hasFilters = selectedGenres.value.length > 0 || selectedYear.value !== null
+
+    // If we have either query or filters, search immediately
+    if (hasQuery || hasFilters) {
         handleSearch()
+    } else if (hasSearched.value) {
+        // If all filters cleared and no query, clear results
+        searchResults.value = []
+        hasSearched.value = false
     }
 })
 </script>

@@ -10,7 +10,7 @@ import type {
 
 // Define the search request schema
 const SearchBodySchema = Type.Object({
-  query: Type.String({ minLength: 1 }),
+  query: Type.Optional(Type.String()),
   genres: Type.Optional(Type.Array(Type.String())),
   year: Type.Optional(Type.Number()),
   sortBy: Type.Optional(
@@ -38,8 +38,11 @@ const search: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
       const { query, genres, year, sortBy = "rating" } = request.body;
 
       // Build the where clause with proper typing
-      const whereClause: ShowWhereInput = {
-        OR: [
+      const whereClause: ShowWhereInput = {};
+
+      // Add text search if query provided
+      if (query && query.trim()) {
+        whereClause.OR = [
           {
             title: {
               contains: query,
@@ -50,8 +53,8 @@ const search: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
               contains: query,
             },
           },
-        ],
-      };
+        ];
+      }
 
       // Add year filter if provided
       if (year) {
