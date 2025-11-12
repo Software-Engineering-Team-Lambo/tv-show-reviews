@@ -1,21 +1,22 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import Card from 'primevue/card'
+import Skeleton from 'primevue/skeleton'
 import SearchHeader from '@/components/SearchHeader.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import SearchFilters from '@/components/SearchFilters.vue'
 import SearchResults from '@/components/SearchResults.vue'
-import type { ShowCardData, SearchResponse } from '@/types/api'
-import { transformToShowCard } from '@/lib/api'
+import type { ShowCardData, SearchRequestBody, SearchResult, FilterOptions } from '@/types/api'
 
 const route = useRoute()
 
 const searchQuery = ref('')
 const selectedGenres = ref<string[]>([])
 const selectedYear = ref<string | null>(null)
-const sortBy = ref('rating')
+const sortBy = ref<'rating' | 'reviews' | 'year' | 'title'>('rating')
 const isLoading = ref(false)
+const isLoadingFilters = ref(true)
 const hasSearched = ref(false)
 
 const genres = ref<string[]>([])
@@ -29,7 +30,19 @@ const sortOptions = ref([
 
 const searchResults = ref<ShowCardData[]>([])
 
-onMounted(() => {
+// Watch for route query changes (when searching from header)
+watch(() => route.query.q, (newQuery) => {
+    if (newQuery && typeof newQuery === 'string') {
+        searchQuery.value = newQuery
+        handleSearch()
+    }
+})
+
+onMounted(async () => {
+    // Load available filters from the API
+    await loadFilters()
+
+    // Check for query params
     if (route.query.q) {
         searchQuery.value = route.query.q as string
         handleSearch()
@@ -39,25 +52,67 @@ onMounted(() => {
     }
 })
 
+const loadFilters = async () => {
+    isLoadingFilters.value = true
+    try {
+        const response = await fetch('/api/search/filters')
+        const data: FilterOptions = await response.json()
+        genres.value = data.genres
+        years.value = data.years
+    } catch (error) {
+        console.error('Failed to load filters:', error)
+    } finally {
+        isLoadingFilters.value = false
+    }
+}
+
 const handleSearch = async () => {
+    if (!searchQuery.value.trim()) return
+
     isLoading.value = true
     hasSearched.value = true
 
     try {
+        // Build the request body with all filters
+        const requestBody: SearchRequestBody = {
+            query: searchQuery.value,
+        }
+
+        // Add optional filters if they have values
+        if (selectedGenres.value.length > 0) {
+            requestBody.genres = selectedGenres.value
+        }
+
+        if (selectedYear.value) {
+            requestBody.year = parseInt(selectedYear.value)
+        }
+
+        requestBody.sortBy = sortBy.value
+
         const response = await fetch('/api/search', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                query: searchQuery.value,
-            }),
+            body: JSON.stringify(requestBody),
         })
 
-        const data: SearchResponse[] = await response.json()
+        if (!response.ok) {
+            throw new Error(`Search failed: ${response.statusText}`)
+        }
 
-        // Transform API response to ShowCardData format
-        searchResults.value = data.map(transformToShowCard)
+        const data: SearchResult[] = await response.json()
+
+        // Map the API response to ShowCardData format
+        searchResults.value = data.map((show) => ({
+            id: show.id,
+            title: show.title,
+            year: show.year,
+            description: show.description,
+            rating: show.rating,
+            reviews: show.reviewCount,
+            genre: show.genres,
+        }))
     } catch (error) {
         console.error('Search failed:', error)
         searchResults.value = []
@@ -72,6 +127,13 @@ const clearFilters = () => {
     selectedYear.value = null
     sortBy.value = 'rating'
 }
+
+// Watch for filter changes and auto-search if we already have a query
+watch([selectedGenres, selectedYear, sortBy], () => {
+    if (hasSearched.value && searchQuery.value.trim()) {
+        handleSearch()
+    }
+})
 </script>
 
 <template>
@@ -88,9 +150,15 @@ const clearFilters = () => {
                         <SearchBar v-model="searchQuery" @search="handleSearch" />
 
                         <!-- Filters -->
-                        <SearchFilters v-model:selected-genres="selectedGenres" v-model:selected-year="selectedYear"
-                            v-model:sort-by="sortBy" :genres="genres" :years="years" :sort-options="sortOptions"
-                            @clear="clearFilters" />
+                        <div v-if="isLoadingFilters" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div v-for="i in 3" :key="i">
+                                <Skeleton height="2.5rem" class="mb-2" width="5rem"></Skeleton>
+                                <Skeleton height="2.5rem"></Skeleton>
+                            </div>
+                        </div>
+                        <SearchFilters v-else v-model:selected-genres="selectedGenres"
+                            v-model:selected-year="selectedYear" v-model:sort-by="sortBy" :genres="genres"
+                            :years="years" :sort-options="sortOptions" @clear="clearFilters" />
                     </div>
                 </template>
             </Card>

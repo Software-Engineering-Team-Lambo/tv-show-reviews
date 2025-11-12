@@ -1,15 +1,32 @@
 import { FastifyPluginAsync } from "fastify";
 import { Static, Type } from "@sinclair/typebox";
+import type {
+  SearchResult,
+  FilterOptions,
+  SortBy,
+  ShowWhereInput,
+  ShowOrderByInput,
+} from "../types/search";
 
-// Define the schema
+// Define the search request schema
 const SearchBodySchema = Type.Object({
   query: Type.String({ minLength: 1 }),
+  genres: Type.Optional(Type.Array(Type.String())),
+  year: Type.Optional(Type.Number()),
+  sortBy: Type.Optional(
+    Type.Union([
+      Type.Literal("rating"),
+      Type.Literal("reviews"),
+      Type.Literal("year"),
+      Type.Literal("title"),
+    ])
+  ),
 });
 
-// Infer the TypeScript type from the schema
 type SearchBody = Static<typeof SearchBodySchema>;
 
 const search: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
+  // POST /api/search - Search shows with filters and sorting
   fastify.post<{ Body: SearchBody }>(
     "/api/search",
     {
@@ -18,28 +35,140 @@ const search: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
       },
     },
     async function (request, reply) {
-      const { query } = request.body;
+      const { query, genres, year, sortBy = "rating" } = request.body;
 
+      // Build the where clause with proper typing
+      const whereClause: ShowWhereInput = {
+        OR: [
+          {
+            title: {
+              contains: query,
+            },
+          },
+          {
+            description: {
+              contains: query,
+            },
+          },
+        ],
+      };
+
+      // Add year filter if provided
+      if (year) {
+        whereClause.year = year;
+      }
+
+      // Add genre filter if provided
+      if (genres && genres.length > 0) {
+        whereClause.genres = {
+          some: {
+            genre: {
+              name: {
+                in: genres,
+              },
+            },
+          },
+        };
+      }
+
+      // Build the orderBy clause with proper typing
+      const orderBy: ShowOrderByInput = (() => {
+        const sortByValue = sortBy as SortBy;
+        switch (sortByValue) {
+          case "rating":
+            // Sort by average rating (need to calculate)
+            return { reviews: { _count: "desc" } }; // Fallback to review count for now
+          case "reviews":
+            return { reviews: { _count: "desc" } };
+          case "year":
+            return { year: "desc" };
+          case "title":
+            return { title: "asc" };
+          default:
+            return { createdAt: "desc" };
+        }
+      })();
+
+      // Fetch results with genres included
       const results = await fastify.prisma.show.findMany({
-        where: {
-          OR: [
-            {
-              title: {
-                contains: query,
-              },
+        where: whereClause,
+        include: {
+          genres: {
+            include: {
+              genre: true,
             },
-            {
-              description: {
-                contains: query,
-              },
+          },
+          reviews: {
+            select: {
+              rating: true,
             },
-          ],
+          },
         },
+        orderBy,
       });
 
-      reply.send(results);
+      // Transform results to include calculated fields
+      const transformedResults: SearchResult[] = results.map((show) => {
+        const avgRating =
+          show.reviews.length > 0
+            ? show.reviews.reduce((sum, r) => sum + r.rating, 0) /
+              show.reviews.length
+            : 0;
+
+        return {
+          id: show.id,
+          title: show.title,
+          description: show.description,
+          year: show.year,
+          genres: show.genres.map((g) => g.genre.name),
+          rating: avgRating,
+          reviewCount: show.reviews.length,
+          createdAt: show.createdAt,
+          updatedAt: show.updatedAt,
+        };
+      });
+
+      // Re-sort by rating if needed (since we calculate it after query)
+      if (sortBy === "rating") {
+        transformedResults.sort((a, b) => b.rating - a.rating);
+      }
+
+      reply.send(transformedResults);
     }
   );
+
+  // GET /api/search/filters - Get available genres and years
+  fastify.get("/api/search/filters", async function (request, reply) {
+    // Get all genres
+    const genres = await fastify.prisma.genre.findMany({
+      orderBy: {
+        name: "asc",
+      },
+    });
+
+    // Get unique years from shows
+    const years = await fastify.prisma.show.findMany({
+      where: {
+        year: {
+          not: null,
+        },
+      },
+      select: {
+        year: true,
+      },
+      distinct: ["year"],
+      orderBy: {
+        year: "desc",
+      },
+    });
+
+    const filterOptions: FilterOptions = {
+      genres: genres.map((g) => g.name),
+      years: years.map((y) => y.year).filter((y): y is number => y !== null),
+    };
+
+    reply.send(filterOptions);
+  });
 };
 
 export default search;

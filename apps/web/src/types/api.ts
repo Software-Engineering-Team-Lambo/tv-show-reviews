@@ -47,6 +47,31 @@ export interface Review {
   updatedAt: Date
 }
 
+// Search API types
+export interface SearchRequestBody {
+  query: string
+  genres?: string[]
+  year?: number
+  sortBy?: 'rating' | 'reviews' | 'year' | 'title'
+}
+
+export interface SearchResult {
+  id: number
+  title: string
+  description: string | null
+  year: number | null
+  genres: string[]
+  rating: number
+  reviewCount: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface FilterOptions {
+  genres: string[]
+  years: number[]
+}
+
 // Extended types for frontend display
 export interface ShowWithDetails extends Show {
   genres?: ShowGenre[]
