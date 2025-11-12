@@ -29,6 +29,8 @@ model Show {
   title       String
   year        Int?
   description String?  @db.Text
+  posterPath  String?
+  releaseDate DateTime?
   seasons     Int?
   status      String?  // e.g., "Ongoing", "Ended"
   reviews     Review[]

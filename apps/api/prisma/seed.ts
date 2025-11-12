@@ -47,77 +47,76 @@ async function main() {
 
   console.log(`✅ Created ${2} users`);
 
-  // Create sample TV shows
-  console.log('Creating sample TV shows...');
-  const shows = await prisma.show.createMany({
-    data: [
-      {
-        title: 'Breaking Bad',
-        description: 'A high school chemistry teacher turned methamphetamine producer partners with a former student.',
+  try {
+    console.log("Fetching movies from TMDB...");
+
+      const apiKey = process.env.API_KEY;
+
+      const response = await fetch(
+        `https://api.themoviedb.org/3/tv/popular?api_key=${apiKey}&language=en-US&page=1`
+      );
+
+      const showsData = await response.json();
+      const shows = showsData.results;
+      console.log(`Found ${shows.length} shows. Saving to database...`);
+
+      for (const show of shows) {
+        await prisma.show.upsert({
+          where: { id: show.id },
+          create: {
+            id: show.id,
+            title: show.name,
+            description: show.overview ?? "",
+            posterPath: show.poster_path,
+            releaseDate: show.first_air_date ? new Date(show.first_air_date) : null,
+          },
+          update: {}, // nothing to update yet
+        });
+      }
+
+    console.log(`✅ Created ${shows.count} TV shows`);
+
+    // Get the created shows to create reviews
+    const allShows = await prisma.show.findMany();
+
+    // Create sample reviews
+    console.log('Creating sample reviews...');
+    await prisma.review.create({
+      data: {
+        rating: 10,
+        comment: 'One of the best TV shows ever made. Walter White\'s transformation is incredible!',
+        userId: user1.id,
+        showId: allShows[0].id, // Breaking Bad
       },
-      {
-        title: 'The Office',
-        description: 'A mockumentary on a group of typical office workers, where the workday consists of ego clashes, inappropriate behavior, and tedium.',
+    });
+
+    await prisma.review.create({
+      data: {
+        rating: 9,
+        comment: 'Hilarious and relatable. Michael Scott is an iconic character.',
+        userId: user2.id,
+        showId: allShows[1].id, // The Office
       },
-      {
-        title: 'Stranger Things',
-        description: 'When a young boy disappears, his mother, a police chief and his friends must confront terrifying supernatural forces.',
+    });
+
+    await prisma.review.create({
+      data: {
+        rating: 8,
+        comment: 'Great sci-fi mystery with a perfect 80s vibe. Highly recommended!',
+        userId: user1.id,
+        showId: allShows[2].id, // Stranger Things
       },
-      {
-        title: 'The Crown',
-        description: 'Follows the political rivalries and romance of Queen Elizabeth II\'s reign and the events that shaped the second half of the 20th century.',
-      },
-      {
-        title: 'Game of Thrones',
-        description: 'Nine noble families fight for control over the lands of Westeros, while an ancient enemy returns after being dormant for millennia.',
-      },
-    ],
-  });
+    });
 
-  console.log(`✅ Created ${shows.count} TV shows`);
+    console.log(`✅ Created ${3} reviews`);
 
-  // Get the created shows to create reviews
-  const allShows = await prisma.show.findMany();
+    console.log('🎉 Seed completed successfully!');
 
-  // Create sample reviews
-  console.log('Creating sample reviews...');
-  await prisma.review.create({
-    data: {
-      rating: 10,
-      comment: 'One of the best TV shows ever made. Walter White\'s transformation is incredible!',
-      userId: user1.id,
-      showId: allShows[0].id, // Breaking Bad
-    },
-  });
-
-  await prisma.review.create({
-    data: {
-      rating: 9,
-      comment: 'Hilarious and relatable. Michael Scott is an iconic character.',
-      userId: user2.id,
-      showId: allShows[1].id, // The Office
-    },
-  });
-
-  await prisma.review.create({
-    data: {
-      rating: 8,
-      comment: 'Great sci-fi mystery with a perfect 80s vibe. Highly recommended!',
-      userId: user1.id,
-      showId: allShows[2].id, // Stranger Things
-    },
-  });
-
-  console.log(`✅ Created ${3} reviews`);
-
-  console.log('🎉 Seed completed successfully!');
+  } catch (err) {
+    console.error('❌ Error seeding database:', err);
+  } finally {
+    await prisma.$disconnect();
+  }
 }
 
-main()
-  .catch((e) => {
-    console.error('❌ Seed failed:', e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+main();
