@@ -53,6 +53,17 @@ const search: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
               contains: query,
             },
           },
+          {
+            cast: {
+              some: {
+                actor: {
+                  name: {
+                    contains: query,
+                  },
+                },
+              },
+            },
+          },
         ];
       }
 
