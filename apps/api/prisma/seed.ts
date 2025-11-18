@@ -2,6 +2,7 @@ import { PrismaClient } from "../generated/prisma/index.js";
 import type {
   TmdbPopularShowsResponse,
   TmdbShowDetails,
+  TmdbAggregateCreditsResponse,
 } from "../src/types/tmdb.js";
 
 const prisma = new PrismaClient();
@@ -123,8 +124,48 @@ async function main() {
         });
       }
 
+      // fetch and setup cast members
+      const creditsResponse = await fetch(
+        `https://api.themoviedb.org/3/tv/${show.id}/aggregate_credits?api_key=${apiKey}&language=en-US`
+      );
+      const creditsData: TmdbAggregateCreditsResponse =
+        await creditsResponse.json();
+
+      for (const castMember of creditsData.cast) {
+        // create the actor if they don't already exist
+        await prisma.actor.upsert({
+          where: { id: castMember.id },
+          create: {
+            id: castMember.id,
+            name: castMember.name,
+          },
+          update: {},
+        });
+
+        // get the primary character role (usually the first one)
+        const primaryRole =
+          castMember.roles.length > 0 ? castMember.roles[0].character : null;
+
+        // assign the actor to the show
+        await prisma.showCast.upsert({
+          where: {
+            showId_actorId: {
+              showId: show.id,
+              actorId: castMember.id,
+            },
+          },
+          create: {
+            showId: show.id,
+            actorId: castMember.id,
+            role: primaryRole,
+            order: castMember.order,
+          },
+          update: {},
+        });
+      }
+
       // the other show details
-      prisma.show.update({
+      await prisma.show.update({
         where: { id: show.id },
         data: {
           seasons: showData.number_of_seasons,

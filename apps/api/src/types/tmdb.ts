@@ -156,3 +156,64 @@ export interface TmdbShowDetails {
   vote_average: number;
   vote_count: number;
 }
+
+/**
+ * Cast member role information
+ */
+export interface TmdbRole {
+  credit_id: string;
+  character: string;
+  episode_count: number;
+}
+
+/**
+ * Aggregate cast member information
+ */
+export interface TmdbAggregateCastMember {
+  adult: boolean;
+  gender: number | null;
+  id: number;
+  known_for_department: string;
+  name: string;
+  original_name: string;
+  popularity: number;
+  profile_path: string | null;
+  roles: TmdbRole[];
+  total_episode_count: number;
+  order: number;
+}
+
+/**
+ * Crew member job information
+ */
+export interface TmdbJob {
+  credit_id: string;
+  job: string;
+  episode_count: number;
+}
+
+/**
+ * Aggregate crew member information
+ */
+export interface TmdbAggregateCrewMember {
+  adult: boolean;
+  gender: number | null;
+  id: number;
+  known_for_department: string;
+  name: string;
+  original_name: string;
+  popularity: number;
+  profile_path: string | null;
+  jobs: TmdbJob[];
+  department: string;
+  total_episode_count: number;
+}
+
+/**
+ * Response from the aggregate credits endpoint
+ */
+export interface TmdbAggregateCreditsResponse {
+  id: number;
+  cast: TmdbAggregateCastMember[];
+  crew: TmdbAggregateCrewMember[];
+}
