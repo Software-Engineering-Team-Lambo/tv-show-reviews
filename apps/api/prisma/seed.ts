@@ -1,5 +1,8 @@
 import { PrismaClient } from "../generated/prisma/index.js";
-import type { TmdbApiResponse } from "../src/types/tmdb.js";
+import type {
+  TmdbPopularShowsResponse,
+  TmdbShowDetails,
+} from "../src/types/tmdb.js";
 
 const prisma = new PrismaClient();
 
@@ -60,7 +63,7 @@ async function main() {
         `https://api.themoviedb.org/3/tv/popular?api_key=${apiKey}&language=en-US&page=${i + 1}`
       );
 
-      const showsData: TmdbApiResponse = await response.json();
+      const showsData: TmdbPopularShowsResponse = await response.json();
       const shows = showsData.results;
       console.log(`Found ${shows.length} shows. Saving to database...`);
 
@@ -85,6 +88,51 @@ async function main() {
 
     // Get the created shows to create reviews
     const allShows = await prisma.show.findMany();
+
+    for (const show of allShows) {
+      const response = await fetch(
+        `https://api.themoviedb.org/3/tv/${show.id}?api_key=${apiKey}&language=en-US`
+      );
+      const showData: TmdbShowDetails = await response.json();
+
+      // setup genres
+      for (const genre of showData.genres) {
+        // create the genre if it doesn't already exist
+        await prisma.genre.upsert({
+          where: { id: genre.id },
+          create: {
+            id: genre.id,
+            name: genre.name,
+          },
+          update: {},
+        });
+
+        // assign the genre to the show
+        await prisma.showGenre.upsert({
+          where: {
+            showId_genreId: {
+              showId: show.id,
+              genreId: genre.id,
+            },
+          },
+          create: {
+            showId: show.id,
+            genreId: genre.id,
+          },
+          update: {},
+        });
+      }
+
+      // the other show details
+      prisma.show.update({
+        where: { id: show.id },
+        data: {
+          seasons: showData.number_of_seasons,
+          status: showData.status,
+          episodes: showData.number_of_episodes,
+        },
+      });
+    }
 
     // Create sample reviews
     console.log("Creating sample reviews...");

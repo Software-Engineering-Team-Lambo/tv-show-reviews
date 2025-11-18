@@ -32,6 +32,7 @@ model Show {
   posterPath  String?
   releaseDate DateTime?
   seasons     Int?
+  episodes    Int?
   status      String?  // e.g., "Ongoing", "Ended"
   reviews     Review[]
   genres      ShowGenre[]
