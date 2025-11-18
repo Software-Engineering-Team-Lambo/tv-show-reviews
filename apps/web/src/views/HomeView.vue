@@ -1,98 +1,106 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import Card from 'primevue/card'
 import Button from 'primevue/button'
-import Rating from 'primevue/rating'
 import Carousel from 'primevue/carousel'
+import ShowCard from '@/components/ShowCard.vue'
+import type { ShowCardData } from '@/types/api'
 
 const router = useRouter()
 
-// TODO: Replace with actual API data
-const trendingShows = ref([
+const trendingShows = ref<ShowCardData[]>([
   {
     id: 1,
     title: 'Breaking Bad',
     rating: 4.8,
     year: 2008,
-    genre: 'Crime, Drama',
+    genre: ['Crime', 'Drama'],
     image: 'https://via.placeholder.com/300x450/4F46E5/FFFFFF?text=Breaking+Bad',
     reviews: 1234,
+    description: 'A high school chemistry teacher turned methamphetamine producer...',
   },
   {
     id: 2,
     title: 'Stranger Things',
     rating: 4.6,
     year: 2016,
-    genre: 'Sci-Fi, Horror',
+    genre: ['Sci-Fi', 'Horror'],
     image: 'https://via.placeholder.com/300x450/7C3AED/FFFFFF?text=Stranger+Things',
     reviews: 987,
+    description: 'When a young boy disappears, his friends uncover supernatural forces...',
   },
   {
     id: 3,
     title: 'The Office',
     rating: 4.7,
     year: 2005,
-    genre: 'Comedy',
+    genre: ['Comedy'],
     image: 'https://via.placeholder.com/300x450/2563EB/FFFFFF?text=The+Office',
     reviews: 2341,
+    description: 'A mockumentary on a group of typical office workers...',
   },
   {
     id: 4,
     title: 'Game of Thrones',
     rating: 4.5,
     year: 2011,
-    genre: 'Fantasy, Drama',
+    genre: ['Fantasy', 'Drama'],
     image: 'https://via.placeholder.com/300x450/DC2626/FFFFFF?text=Game+of+Thrones',
     reviews: 3456,
+    description: 'Nine noble families fight for control of the lands of Westeros...',
   },
   {
     id: 5,
     title: 'The Crown',
     rating: 4.4,
     year: 2016,
-    genre: 'Drama, Biography',
+    genre: ['Drama', 'Biography'],
     image: 'https://via.placeholder.com/300x450/059669/FFFFFF?text=The+Crown',
     reviews: 876,
+    description: 'The reign and marriages of Queen Elizabeth II...',
   },
   {
     id: 6,
     title: 'Black Mirror',
     rating: 4.6,
     year: 2011,
-    genre: 'Sci-Fi, Thriller',
+    genre: ['Sci-Fi', 'Thriller'],
     image: 'https://via.placeholder.com/300x450/000000/FFFFFF?text=Black+Mirror',
     reviews: 654,
+    description: 'An anthology series exploring a twisted, high-tech near-future...',
   },
 ])
 
-const newReleases = ref([
+const newReleases = ref<ShowCardData[]>([
   {
     id: 7,
     title: 'The Last of Us',
     rating: 4.9,
     year: 2023,
-    genre: 'Action, Drama',
+    genre: ['Action', 'Drama'],
     image: 'https://via.placeholder.com/300x450/EA580C/FFFFFF?text=Last+of+Us',
     reviews: 543,
+    description: 'Twenty years after a fungal outbreak, survivors Joel and Ellie embark on a journey...',
   },
   {
     id: 8,
     title: 'Wednesday',
     rating: 4.3,
     year: 2022,
-    genre: 'Comedy, Horror',
+    genre: ['Comedy', 'Horror'],
     image: 'https://via.placeholder.com/300x450/64748B/FFFFFF?text=Wednesday',
     reviews: 432,
+    description: 'Wednesday Addams attempts to master her emerging psychic ability...',
   },
   {
     id: 9,
     title: 'The Bear',
     rating: 4.7,
     year: 2022,
-    genre: 'Drama, Comedy',
+    genre: ['Drama', 'Comedy'],
     image: 'https://via.placeholder.com/300x450/0891B2/FFFFFF?text=The+Bear',
     reviews: 321,
+    description: 'A young chef returns to Chicago to run his family sandwich shop...',
   },
 ])
 
@@ -119,9 +127,7 @@ const responsiveOptions = ref([
   },
 ])
 
-const navigateToShow = (id: number) => {
-  router.push({ name: 'show-details', params: { id } })
-}
+
 </script>
 
 <template>
@@ -151,38 +157,7 @@ const navigateToShow = (id: number) => {
         <Carousel :value="trendingShows" :numVisible="4" :numScroll="1" :responsiveOptions="responsiveOptions">
           <template #item="{ data }">
             <div class="p-2">
-              <Card class="hover:shadow-xl transition-shadow cursor-pointer">
-                <template #header>
-                  <img :src="data.image" :alt="data.title" class="w-full h-64 object-cover"
-                    @click="navigateToShow(data.id)" />
-                </template>
-                <template #title>
-                  <div class="text-lg font-semibold truncate cursor-pointer hover:text-indigo-600"
-                    @click="navigateToShow(data.id)">
-                    {{ data.title }}
-                  </div>
-                </template>
-                <template #subtitle>
-                  <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <span>{{ data.year }}</span>
-                    <span>•</span>
-                    <span>{{ data.genre }}</span>
-                  </div>
-                </template>
-                <template #content>
-                  <div class="flex items-center justify-between">
-                    <div class="flex items-center gap-2">
-                      <Rating :modelValue="data.rating" readonly :cancel="false" />
-                      <span class="text-sm font-semibold">{{ data.rating }}</span>
-                    </div>
-                    <span class="text-xs text-gray-500">{{ data.reviews }} reviews</span>
-                  </div>
-                </template>
-                <template #footer>
-                  <Button label="View Details" icon="pi pi-arrow-right" iconPos="right" text class="w-full"
-                    @click="navigateToShow(data.id)" />
-                </template>
-              </Card>
+              <ShowCard :show="data" image-height="h-64" />
             </div>
           </template>
         </Carousel>
@@ -196,38 +171,7 @@ const navigateToShow = (id: number) => {
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <Card v-for="show in newReleases" :key="show.id" class="hover:shadow-xl transition-shadow cursor-pointer">
-            <template #header>
-              <img :src="show.image" :alt="show.title" class="w-full h-64 object-cover"
-                @click="navigateToShow(show.id)" />
-            </template>
-            <template #title>
-              <div class="text-lg font-semibold truncate cursor-pointer hover:text-indigo-600"
-                @click="navigateToShow(show.id)">
-                {{ show.title }}
-              </div>
-            </template>
-            <template #subtitle>
-              <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                <span>{{ show.year }}</span>
-                <span>•</span>
-                <span>{{ show.genre }}</span>
-              </div>
-            </template>
-            <template #content>
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                  <Rating :modelValue="show.rating" readonly :cancel="false" />
-                  <span class="text-sm font-semibold">{{ show.rating }}</span>
-                </div>
-                <span class="text-xs text-gray-500">{{ show.reviews }} reviews</span>
-              </div>
-            </template>
-            <template #footer>
-              <Button label="View Details" icon="pi pi-arrow-right" iconPos="right" text class="w-full"
-                @click="navigateToShow(show.id)" />
-            </template>
-          </Card>
+          <ShowCard v-for="show in newReleases" :key="show.id" :show="show" image-height="h-64" />
         </div>
       </section>
 
