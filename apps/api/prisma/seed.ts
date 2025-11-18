@@ -50,35 +50,37 @@ async function main() {
 
     // Fetch sample TV shows from The Movie Database (TMDB) API
     console.log("Fetching movies from TMDB...");
-
     const apiKey = process.env.API_KEY;
 
-    const response = await fetch(
-      `https://api.themoviedb.org/3/tv/popular?api_key=${apiKey}&language=en-US&page=1`
-    );
+    for (let i = 0; i < 5; i++) {
+      console.log(`Fetch iteration ${i + 1}`);
 
-    const showsData = await response.json();
-    console.log(showsData);
-    const shows = showsData.results;
-    console.log(`Found ${shows.length} shows. Saving to database...`);
+      const response = await fetch(
+        `https://api.themoviedb.org/3/tv/popular?api_key=${apiKey}&language=en-US&page=${i + 1}`
+      );
 
-    for (const show of shows) {
-      await prisma.show.upsert({
-        where: { id: show.id },
-        create: {
-          id: show.id,
-          title: show.name,
-          description: show.overview ?? "",
-          posterPath: show.poster_path,
-          releaseDate: show.first_air_date
-            ? new Date(show.first_air_date)
-            : null,
-        },
-        update: {}, // nothing to update yet
-      });
+      const showsData = await response.json();
+      const shows = showsData.results;
+      console.log(`Found ${shows.length} shows. Saving to database...`);
+
+      for (const show of shows) {
+        await prisma.show.upsert({
+          where: { id: show.id },
+          create: {
+            id: show.id,
+            title: show.name,
+            description: show.overview ?? "",
+            posterPath: show.poster_path,
+            releaseDate: show.first_air_date
+              ? new Date(show.first_air_date)
+              : null,
+          },
+          update: {}, // nothing to update yet
+        });
+      }
+
+      console.log(`✅ Created ${shows.length} TV shows`);
     }
-
-    console.log(`✅ Created ${shows.length} TV shows`);
 
     // Get the created shows to create reviews
     const allShows = await prisma.show.findMany();
