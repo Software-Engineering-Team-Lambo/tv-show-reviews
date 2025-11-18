@@ -1,4 +1,5 @@
 import { PrismaClient } from "../generated/prisma/index.js";
+import type { TmdbApiResponse } from "../src/types/tmdb.js";
 
 const prisma = new PrismaClient();
 
@@ -59,7 +60,7 @@ async function main() {
         `https://api.themoviedb.org/3/tv/popular?api_key=${apiKey}&language=en-US&page=${i + 1}`
       );
 
-      const showsData = await response.json();
+      const showsData: TmdbApiResponse = await response.json();
       const shows = showsData.results;
       console.log(`Found ${shows.length} shows. Saving to database...`);
 
