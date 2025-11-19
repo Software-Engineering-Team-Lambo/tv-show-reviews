@@ -96,31 +96,24 @@ async function main() {
       );
       const showData: TmdbShowDetails = await response.json();
 
-      // setup genres
-      for (const genre of showData.genres) {
-        // create the genre if it doesn't already exist
-        await prisma.genre.upsert({
-          where: { id: genre.id },
-          create: {
+      // setup genres - batch create
+      if (showData.genres.length > 0) {
+        // Create all genres at once
+        await prisma.genre.createMany({
+          data: showData.genres.map((genre) => ({
             id: genre.id,
             name: genre.name,
-          },
-          update: {},
+          })),
+          skipDuplicates: true,
         });
 
-        // assign the genre to the show
-        await prisma.showGenre.upsert({
-          where: {
-            showId_genreId: {
-              showId: show.id,
-              genreId: genre.id,
-            },
-          },
-          create: {
+        // Assign all genres to the show at once
+        await prisma.showGenre.createMany({
+          data: showData.genres.map((genre) => ({
             showId: show.id,
             genreId: genre.id,
-          },
-          update: {},
+          })),
+          skipDuplicates: true,
         });
       }
 
@@ -131,39 +124,38 @@ async function main() {
       const creditsData: TmdbAggregateCreditsResponse =
         await creditsResponse.json();
 
-      for (const castMember of creditsData.cast) {
-        // create the actor if they don't already exist
-        await prisma.actor.upsert({
-          where: { id: castMember.id },
-          create: {
+      const castMembers = creditsData.cast.filter(
+        (m) => m.known_for_department === "Acting"
+      );
+
+      if (castMembers.length > 0) {
+        // Batch create all actors at once
+        await prisma.actor.createMany({
+          data: castMembers.map((castMember) => ({
             id: castMember.id,
             name: castMember.name,
-          },
-          update: {},
+          })),
+          skipDuplicates: true,
         });
 
-        // get the primary character role (usually the first one)
-        const primaryRole =
-          castMember.roles.length > 0 ? castMember.roles[0].character : null;
-
-        // assign the actor to the show
-        await prisma.showCast.upsert({
-          where: {
-            showId_actorId: {
-              showId: show.id,
-              actorId: castMember.id,
-            },
-          },
-          create: {
+        // Batch assign all actors to the show at once
+        await prisma.showCast.createMany({
+          data: castMembers.map((castMember) => ({
             showId: show.id,
             actorId: castMember.id,
-            role: primaryRole,
+            role:
+              castMember.roles.length > 0
+                ? castMember.roles[0].character
+                : null,
             order: castMember.order,
-          },
-          update: {},
+          })),
+          skipDuplicates: true,
         });
-      }
 
+        console.log(
+          `✅ Added ${castMembers.length} cast members to show ${show.title}`
+        );
+      }
       // the other show details
       await prisma.show.update({
         where: { id: show.id },
