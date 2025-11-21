@@ -180,17 +180,17 @@ const search: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
         },
       }),
       // Get unique years from shows (extract from releaseDate)
-      fastify.prisma.$queryRaw<{ year: number }[]>`
-        SELECT DISTINCT YEAR(releaseDate) as year
-        FROM Show
-        WHERE releaseDate IS NOT NULL
-        ORDER BY year DESC
+      fastify.prisma.$queryRaw<{ year: bigint }[]>`
+        SELECT DISTINCT YEAR(\`releaseDate\`) AS year
+        FROM \`Show\`
+        WHERE \`releaseDate\` IS NOT NULL
+        ORDER BY year DESC;
       `,
     ]);
 
     const filterOptions: FilterOptions = {
       genres: genres.map((g) => g.name),
-      years: years.map((y) => y.year),
+      years: years.map((y) => Number(y.year)),
     };
 
     reply.send(filterOptions);
