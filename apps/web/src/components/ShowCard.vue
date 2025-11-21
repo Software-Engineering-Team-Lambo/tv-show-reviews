@@ -33,9 +33,13 @@ const displayImage = computed(() => {
 </script>
 
 <template>
-    <Card class="hover:shadow-xl transition-shadow cursor-pointer">
+    <Card class="hover:shadow-xl transition-shadow cursor-pointer h-full flex flex-col">
         <template #header>
-            <img :src="displayImage" :alt="show.title" class="w-full h-125 object-cover" @click="navigateToShow" />
+            <div class="w-full aspect-[2/3] overflow-hidden bg-gray-200 dark:bg-gray-700">
+                <img :src="displayImage" :alt="show.title"
+                    class="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    @click="navigateToShow" />
+            </div>
         </template>
         <template #title>
             <div class="text-lg font-semibold hover:text-indigo-600 cursor-pointer" @click="navigateToShow">
