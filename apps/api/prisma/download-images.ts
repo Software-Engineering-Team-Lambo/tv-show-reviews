@@ -4,6 +4,11 @@ import {
   setupImagesDirectory,
   downloadShowPoster,
 } from "./lib/image-downloader.js";
+import { config } from "dotenv";
+import { resolve } from "path";
+
+// Load .env from apps/api/.env
+config({ path: resolve(process.cwd(), ".env") });
 
 const prisma = new PrismaClient();
 
