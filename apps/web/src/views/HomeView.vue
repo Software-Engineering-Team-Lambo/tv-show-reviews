@@ -8,101 +8,9 @@ import type { ShowCardData } from '@/types/api'
 
 const router = useRouter()
 
-const trendingShows = ref<ShowCardData[]>([
-  {
-    id: 1,
-    title: 'Breaking Bad',
-    rating: 4.8,
-    year: 2008,
-    genre: ['Crime', 'Drama'],
-    image: 'https://via.placeholder.com/300x450/4F46E5/FFFFFF?text=Breaking+Bad',
-    reviews: 1234,
-    description: 'A high school chemistry teacher turned methamphetamine producer...',
-  },
-  {
-    id: 2,
-    title: 'Stranger Things',
-    rating: 4.6,
-    year: 2016,
-    genre: ['Sci-Fi', 'Horror'],
-    image: 'https://via.placeholder.com/300x450/7C3AED/FFFFFF?text=Stranger+Things',
-    reviews: 987,
-    description: 'When a young boy disappears, his friends uncover supernatural forces...',
-  },
-  {
-    id: 3,
-    title: 'The Office',
-    rating: 4.7,
-    year: 2005,
-    genre: ['Comedy'],
-    image: 'https://via.placeholder.com/300x450/2563EB/FFFFFF?text=The+Office',
-    reviews: 2341,
-    description: 'A mockumentary on a group of typical office workers...',
-  },
-  {
-    id: 4,
-    title: 'Game of Thrones',
-    rating: 4.5,
-    year: 2011,
-    genre: ['Fantasy', 'Drama'],
-    image: 'https://via.placeholder.com/300x450/DC2626/FFFFFF?text=Game+of+Thrones',
-    reviews: 3456,
-    description: 'Nine noble families fight for control of the lands of Westeros...',
-  },
-  {
-    id: 5,
-    title: 'The Crown',
-    rating: 4.4,
-    year: 2016,
-    genre: ['Drama', 'Biography'],
-    image: 'https://via.placeholder.com/300x450/059669/FFFFFF?text=The+Crown',
-    reviews: 876,
-    description: 'The reign and marriages of Queen Elizabeth II...',
-  },
-  {
-    id: 6,
-    title: 'Black Mirror',
-    rating: 4.6,
-    year: 2011,
-    genre: ['Sci-Fi', 'Thriller'],
-    image: 'https://via.placeholder.com/300x450/000000/FFFFFF?text=Black+Mirror',
-    reviews: 654,
-    description: 'An anthology series exploring a twisted, high-tech near-future...',
-  },
-])
+const trendingShows = ref<ShowCardData[]>([])
 
-const newReleases = ref<ShowCardData[]>([
-  {
-    id: 7,
-    title: 'The Last of Us',
-    rating: 4.9,
-    year: 2023,
-    genre: ['Action', 'Drama'],
-    image: 'https://via.placeholder.com/300x450/EA580C/FFFFFF?text=Last+of+Us',
-    reviews: 543,
-    description: 'Twenty years after a fungal outbreak, survivors Joel and Ellie embark on a journey...',
-  },
-  {
-    id: 8,
-    title: 'Wednesday',
-    rating: 4.3,
-    year: 2022,
-    genre: ['Comedy', 'Horror'],
-    image: 'https://via.placeholder.com/300x450/64748B/FFFFFF?text=Wednesday',
-    reviews: 432,
-    description: 'Wednesday Addams attempts to master her emerging psychic ability...',
-  },
-  {
-    id: 9,
-    title: 'The Bear',
-    rating: 4.7,
-    year: 2022,
-    genre: ['Drama', 'Comedy'],
-    image: 'https://via.placeholder.com/300x450/0891B2/FFFFFF?text=The+Bear',
-    reviews: 321,
-    description: 'A young chef returns to Chicago to run his family sandwich shop...',
-  },
-])
+const newReleases = ref<ShowCardData[]>([])
 
 const responsiveOptions = ref([
   {
@@ -149,7 +57,7 @@ const responsiveOptions = ref([
       <section class="mb-12">
         <div class="flex justify-between items-center mb-6">
           <h2 class="text-3xl font-bold text-gray-800 dark:text-white">
-            🔥 Trending Now
+            Popular
           </h2>
           <Button label="View All" text icon="pi pi-arrow-right" iconPos="right" @click="router.push('/search')" />
         </div>
@@ -166,7 +74,7 @@ const responsiveOptions = ref([
       <!-- New Releases Section -->
       <section class="mb-12">
         <div class="flex justify-between items-center mb-6">
-          <h2 class="text-3xl font-bold text-gray-800 dark:text-white">✨ New Releases</h2>
+          <h2 class="text-3xl font-bold text-gray-800 dark:text-white">New Releases</h2>
           <Button label="View All" text icon="pi pi-arrow-right" iconPos="right" @click="router.push('/search')" />
         </div>
 

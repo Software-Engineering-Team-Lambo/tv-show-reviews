@@ -147,7 +147,7 @@ const search: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
           id: show.id,
           title: show.title,
           description: show.description,
-          year: show.year,
+          releaseDate: show.releaseDate,
           genres: show.genres.map((g) => g.genre.name),
           rating: avgRating,
           reviewCount: show._count.reviews,

@@ -79,6 +79,7 @@ async function main() {
             releaseDate: show.first_air_date
               ? new Date(show.first_air_date)
               : null,
+            popularity: show.popularity,
           },
           update: {}, // nothing to update yet
         });
