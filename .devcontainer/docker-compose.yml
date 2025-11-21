@@ -8,8 +8,6 @@ services:
     command: sleep infinity
     network_mode: service:db
     env_file:
-      - path: ../apps/api/.env.example
-        required: true
       - path: ../apps/api/.env
         required: false
     environment:
