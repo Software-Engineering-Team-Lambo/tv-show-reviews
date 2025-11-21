@@ -35,7 +35,7 @@ const displayImage = computed(() => {
 <template>
     <Card class="hover:shadow-xl transition-shadow cursor-pointer">
         <template #header>
-            <img :src="displayImage" :alt="show.title" class="w-full h-100 object-cover" @click="navigateToShow" />
+            <img :src="displayImage" :alt="show.title" class="w-full object-cover" @click="navigateToShow" />
         </template>
         <template #title>
             <div class="text-lg font-semibold hover:text-indigo-600 cursor-pointer" @click="navigateToShow">
