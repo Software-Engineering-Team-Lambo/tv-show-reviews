@@ -3,7 +3,7 @@ name: Deploy to Production
 on:
   workflow_dispatch:
   push:
-    branches: [release]  # Still auto-build/deploy if someone does push
+    branches: [release] # Still auto-build/deploy if someone does push
 
 env:
   REGISTRY: ghcr.io
@@ -12,7 +12,7 @@ env:
 jobs:
   build:
     name: Build Docker Image and SPA
-    runs-on: self-hosted 
+    runs-on: self-hosted
     permissions:
       contents: read
       packages: write
@@ -24,11 +24,26 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: "22"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Setup database connection for image download
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }} # Production DB connection
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }} # TMDB API key for image downloads
+        run: |
+          echo "DATABASE_URL=$DATABASE_URL" > apps/api/.env
+          echo "TMDB_API_KEY=$TMDB_API_KEY" >> apps/api/.env
+
+      - name: Download show images from TMDB
+        run: npm run download-images -w=api
+        # This connects to production DB to fetch show metadata, then downloads
+        # poster images from TMDB. Images are saved to apps/web/public/show_images/
+        # and bundled into the SPA build. This ensures images persist across deployments
+        # even if new shows are added to the database.
 
       - name: Build Vue SPA
         run: npm run build -w=web
@@ -70,11 +85,11 @@ jobs:
   deploy:
     name: Deploy to Production Server
     needs: build
-    runs-on: self-hosted  # Use self-hosted ARM runner
+    runs-on: self-hosted # Use self-hosted ARM runner
     # Only deploy on push to release (not on PRs)
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    environment: production  # Requires manual approval
-    
+    environment: production # Requires manual approval
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -98,7 +113,7 @@ jobs:
             -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
             apps/web/dist/ \
             ${{ secrets.VM_USER }}@${{ secrets.VM_HOST }}:~/tv-show-reviews/apps/web/dist/
-          
+
           scp -i ~/.ssh/deploy_key \
             docker-compose.prod.yml \
             Caddyfile \
@@ -141,8 +156,10 @@ jobs:
             # Clean up old images
             docker image prune -f
             
-            # Note: Database seeding is MANUAL ONLY
-            # To seed: docker compose -f docker-compose.prod.yml --env-file .env.production run --rm api npm run seed
+            # Note: Database seeding is MANUAL ONLY (first-time setup)
+            # To seed production database: 
+            #   docker compose -f docker-compose.prod.yml --env-file .env.production run --rm api npm run seed
+            # This downloads images AND seeds data. After first seed, GitHub Actions handles image updates automatically.
             
             # Logout from GHCR
             docker logout ghcr.io

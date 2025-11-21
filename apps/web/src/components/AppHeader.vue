@@ -46,6 +46,8 @@ const toggleUserMenu = (event: Event) => {
 const handleSearch = () => {
     if (searchQuery.value.trim()) {
         router.push({ name: 'search', query: { q: searchQuery.value } })
+        // Clear local search after navigating
+        searchQuery.value = ''
     }
 }
 </script>
