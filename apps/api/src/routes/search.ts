@@ -67,9 +67,12 @@ const search: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
         ];
       }
 
-      // Add year filter if provided
+      // Add year filter if provided (filter by releaseDate year)
       if (year) {
-        whereClause.year = year;
+        whereClause.releaseDate = {
+          gte: new Date(`${year}-01-01`),
+          lt: new Date(`${year + 1}-01-01`),
+        };
       }
 
       // Add genre filter if provided
@@ -95,7 +98,7 @@ const search: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
           case "reviews":
             return { reviews: { _count: "desc" } };
           case "year":
-            return { year: "desc" };
+            return { releaseDate: "desc" };
           case "title":
             return { title: "asc" };
           default:
@@ -175,26 +178,18 @@ const search: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
           name: "asc",
         },
       }),
-      // Get unique years from shows
-      fastify.prisma.show.findMany({
-        where: {
-          year: {
-            not: null,
-          },
-        },
-        select: {
-          year: true,
-        },
-        distinct: ["year"],
-        orderBy: {
-          year: "desc",
-        },
-      }),
+      // Get unique years from shows (extract from releaseDate)
+      fastify.prisma.$queryRaw<{ year: number }[]>`
+        SELECT DISTINCT YEAR(releaseDate) as year
+        FROM Show
+        WHERE releaseDate IS NOT NULL
+        ORDER BY year DESC
+      `,
     ]);
 
     const filterOptions: FilterOptions = {
       genres: genres.map((g) => g.name),
-      years: years.map((y) => y.year).filter((y): y is number => y !== null),
+      years: years.map((y) => y.year),
     };
 
     reply.send(filterOptions);

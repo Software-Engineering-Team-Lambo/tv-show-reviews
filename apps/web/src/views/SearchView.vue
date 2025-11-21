@@ -133,7 +133,7 @@ const handleSearch = async () => {
         searchResults.value = data.map((show) => ({
             id: show.id,
             title: show.title,
-            year: show.year,
+            year: show.releaseDate ? new Date(show.releaseDate).getFullYear() : null,
             description: show.description,
             rating: show.rating,
             reviews: show.reviewCount,
@@ -165,7 +165,7 @@ watch([selectedGenres, selectedYear, sortBy], () => {
     if (hasQuery || hasFilters) {
         handleSearch()
     } else if (hasSearched.value) {
-        // If all filters cleared and no query, clear results
+// If all filters cleared and no query, clear results
         searchResults.value = []
         hasSearched.value = false
     }

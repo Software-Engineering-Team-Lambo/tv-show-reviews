@@ -59,7 +59,7 @@ export interface SearchResult {
   id: number
   title: string
   description: string | null
-  year: number | null
+  releaseDate: string | null
   genres: string[]
   rating: number
   reviewCount: number
