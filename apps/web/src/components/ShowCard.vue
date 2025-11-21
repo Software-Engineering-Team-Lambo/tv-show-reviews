@@ -8,12 +8,10 @@ import type { ShowCardData } from '@/types/api'
 
 interface Props {
     show: ShowCardData
-    imageHeight?: string
     showDescription?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-    imageHeight: 'h-72',
     showDescription: false,
 })
 
@@ -37,8 +35,7 @@ const displayImage = computed(() => {
 <template>
     <Card class="hover:shadow-xl transition-shadow cursor-pointer">
         <template #header>
-            <img :src="displayImage" :alt="show.title" :class="`w-full ${imageHeight} object-cover`"
-                @click="navigateToShow" />
+            <img :src="displayImage" :alt="show.title" class="w-full h-100 object-cover" @click="navigateToShow" />
         </template>
         <template #title>
             <div class="text-lg font-semibold hover:text-indigo-600 cursor-pointer" @click="navigateToShow">
