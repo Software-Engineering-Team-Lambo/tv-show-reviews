@@ -1,21 +1,16 @@
 import { PrismaClient } from "../generated/prisma/index.js";
-import * as fs from "node:fs";
-import * as path from "node:path";
 import type {
   TmdbPopularShowsResponse,
   TmdbShowDetails,
   TmdbAggregateCreditsResponse,
-  TmdbConfigurationResponse,
 } from "../src/types/tmdb.js";
+import {
+  getTmdbConfiguration,
+  setupImagesDirectory,
+  downloadShowPoster,
+} from "./lib/image-downloader.js";
 
 const prisma = new PrismaClient();
-const IMAGES_DIR = path.join(
-  process.cwd(),
-  "..",
-  "web",
-  "public",
-  "show_images"
-);
 
 /**
  * Database Seed Script
@@ -29,74 +24,6 @@ const IMAGES_DIR = path.join(
  *
  * The script is idempotent - safe to run multiple times (checks if already seeded).
  */
-
-/**
- * Get TMDB API configuration including image base URLs and sizes
- */
-async function getTmdbConfiguration(
-  apiKey: string
-): Promise<TmdbConfigurationResponse> {
-  console.log("Fetching TMDB configuration...");
-  const response = await fetch(
-    `https://api.themoviedb.org/3/configuration?api_key=${apiKey}`
-  );
-  const config: TmdbConfigurationResponse = await response.json();
-  console.log(
-    `✅ Available poster sizes: ${config.images.poster_sizes.join(", ")}`
-  );
-  return config;
-}
-
-/**
- * Setup images directory - delete if exists and recreate
- */
-function setupImagesDirectory(): void {
-  console.log("Setting up images directory...");
-  if (fs.existsSync(IMAGES_DIR)) {
-    console.log("Deleting existing images directory...");
-    fs.rmSync(IMAGES_DIR, { recursive: true, force: true });
-  }
-  fs.mkdirSync(IMAGES_DIR, { recursive: true });
-  console.log(`✅ Created images directory: ${IMAGES_DIR}`);
-}
-
-/**
- * Download image from URL and save to file
- */
-async function downloadImage(url: string, filepath: string): Promise<void> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to download image: ${response.statusText}`);
-  }
-  const buffer = await response.arrayBuffer();
-  fs.writeFileSync(filepath, Buffer.from(buffer));
-}
-
-/**
- * Download poster image for a show
- */
-async function downloadShowPoster(
-  showId: number,
-  posterPath: string | null,
-  imageBaseUrl: string,
-  posterSize: string = "w500"
-): Promise<void> {
-  if (!posterPath) {
-    console.log(`⚠️  Show ${showId} has no poster path, skipping...`);
-    return;
-  }
-
-  const imageUrl = `${imageBaseUrl}${posterSize}${posterPath}`;
-  const filename = posterPath.slice(1);
-  const filepath = path.join(IMAGES_DIR, filename);
-
-  try {
-    await downloadImage(imageUrl, filepath);
-    console.log(`✅ Downloaded poster for show ${showId}`);
-  } catch (error) {
-    console.error(`❌ Failed to download poster for show ${showId}:`, error);
-  }
-}
 
 /**
  * Create sample users
@@ -270,7 +197,12 @@ async function enrichShowDetails(
     });
 
     // Download poster image
-    await downloadShowPoster(show.id, show.posterPath, imageBaseUrl);
+    await downloadShowPoster(
+      show.id,
+      show.title,
+      show.posterPath,
+      imageBaseUrl
+    );
   }
 
   console.log("✅ Enriched all show details");
