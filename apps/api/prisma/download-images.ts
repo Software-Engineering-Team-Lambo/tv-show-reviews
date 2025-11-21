@@ -26,6 +26,17 @@ async function main() {
       throw new Error("TMDB_API_KEY environment variable is not set");
     }
 
+    // Test database connection
+    try {
+      await prisma.$connect();
+      console.log("✅ Database connection successful");
+    } catch (error) {
+      console.error("❌ Failed to connect to database:", error);
+      throw new Error(
+        "Cannot connect to database. Ensure DATABASE_URL is correct and database is accessible."
+      );
+    }
+
     // Get TMDB configuration for image URLs
     const tmdbConfig = await getTmdbConfiguration(apiKey);
     const imageBaseUrl = tmdbConfig.images.secure_base_url;
@@ -33,28 +44,68 @@ async function main() {
     // Setup images directory
     setupImagesDirectory();
 
-    // Get all shows from database
-    const shows = await prisma.show.findMany({
-      select: {
-        id: true,
-        title: true,
-        posterPath: true,
-      },
-    });
+    // Get all shows from database with error handling for schema mismatch
+    let shows;
+    try {
+      shows = await prisma.show.findMany({
+        select: {
+          id: true,
+          title: true,
+          posterPath: true,
+        },
+      });
+    } catch (error: any) {
+      if (error.code === "P2021" || error.message?.includes("posterPath")) {
+        console.error(
+          "❌ Schema mismatch detected: 'posterPath' column may not exist in database."
+        );
+        console.error("Run migrations first: npx prisma migrate deploy");
+        throw new Error(
+          "Database schema is out of sync. Run migrations before downloading images."
+        );
+      }
+      throw error;
+    }
+
+    if (shows.length === 0) {
+      console.log("⚠️  No shows found in database. Run seed script first.");
+      return;
+    }
 
     console.log(`Found ${shows.length} shows in database`);
 
     // Download all posters
+    let successCount = 0;
+    let failCount = 0;
+
     for (const show of shows) {
-      await downloadShowPoster(
-        show.id,
-        show.title,
-        show.posterPath,
-        imageBaseUrl
-      );
+      try {
+        await downloadShowPoster(
+          show.id,
+          show.title,
+          show.posterPath,
+          imageBaseUrl
+        );
+        successCount++;
+      } catch (error) {
+        failCount++;
+        console.error(
+          `⚠️  Failed to download poster for ${show.title}:`,
+          error
+        );
+        // Continue with other shows instead of failing entirely
+      }
     }
 
-    console.log("🎉 Image download completed successfully!");
+    console.log(
+      `🎉 Image download completed! Success: ${successCount}, Failed: ${failCount}`
+    );
+
+    if (failCount > 0) {
+      console.log(
+        "⚠️  Some images failed to download but the process continued."
+      );
+    }
   } catch (err) {
     console.error("❌ Error downloading images:", err);
     throw err;
