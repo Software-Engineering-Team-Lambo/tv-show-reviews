@@ -8,12 +8,10 @@ import type { ShowCardData } from '@/types/api'
 
 interface Props {
     show: ShowCardData
-    imageHeight?: string
     showDescription?: boolean
 }
 
 const props = withDefaults(defineProps<Props>(), {
-    imageHeight: 'h-72',
     showDescription: false,
 })
 
@@ -30,15 +28,18 @@ const genreDisplay = computed(() => {
 
 // Get placeholder image if none provided
 const displayImage = computed(() => {
-    return props.show.image || `https://placehold.co/400x600?text=${encodeURIComponent(props.show.title)}`
+    return `show_images${props.show.image}`
 })
 </script>
 
 <template>
-    <Card class="hover:shadow-xl transition-shadow cursor-pointer">
+    <Card class="hover:shadow-xl transition-shadow cursor-pointer h-full flex flex-col">
         <template #header>
-            <img :src="displayImage" :alt="show.title" :class="`w-full ${imageHeight} object-cover`"
-                @click="navigateToShow" />
+            <div class="w-full aspect-[2/3] overflow-hidden bg-gray-200 dark:bg-gray-700">
+                <img :src="displayImage" :alt="show.title"
+                    class="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                    @click="navigateToShow" />
+            </div>
         </template>
         <template #title>
             <div class="text-lg font-semibold hover:text-indigo-600 cursor-pointer" @click="navigateToShow">
