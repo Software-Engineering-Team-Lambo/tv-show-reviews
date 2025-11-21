@@ -55,7 +55,7 @@ async function main() {
 
     // Fetch sample TV shows from The Movie Database (TMDB) API
     console.log("Fetching movies from TMDB...");
-    const apiKey = process.env.API_KEY;
+    const apiKey = process.env.TMDB_API_KEY;
 
     for (let i = 0; i < 5; i++) {
       console.log(`Fetch iteration ${i + 1}`);
