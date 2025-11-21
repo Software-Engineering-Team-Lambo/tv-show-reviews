@@ -30,7 +30,7 @@ const genreDisplay = computed(() => {
 
 // Get placeholder image if none provided
 const displayImage = computed(() => {
-    return props.show.image || `https://placehold.co/400x600?text=${encodeURIComponent(props.show.title)}`
+    return `show_images${props.show.image}`
 })
 </script>
 
