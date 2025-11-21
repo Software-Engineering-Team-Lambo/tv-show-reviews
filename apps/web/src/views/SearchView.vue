@@ -133,8 +133,9 @@ const handleSearch = async () => {
         searchResults.value = data.map((show) => ({
             id: show.id,
             title: show.title,
-            year: show.year,
+            year: show.releaseDate ? new Date(show.releaseDate).getFullYear() : null,
             description: show.description,
+            image: show.posterPath ?? undefined,
             rating: show.rating,
             reviews: show.reviewCount,
             genre: show.genres,

@@ -9,7 +9,8 @@ export interface SearchResult {
   id: number;
   title: string;
   description: string | null;
-  year: number | null;
+  posterPath: string | null;
+  releaseDate: Date | null;
   genres: string[];
   rating: number;
   reviewCount: number;
