@@ -135,6 +135,7 @@ const handleSearch = async () => {
             title: show.title,
             year: show.releaseDate ? new Date(show.releaseDate).getFullYear() : null,
             description: show.description,
+            image: show.posterPath ?? undefined,
             rating: show.rating,
             reviews: show.reviewCount,
             genre: show.genres,
@@ -165,7 +166,7 @@ watch([selectedGenres, selectedYear, sortBy], () => {
     if (hasQuery || hasFilters) {
         handleSearch()
     } else if (hasSearched.value) {
-// If all filters cleared and no query, clear results
+        // If all filters cleared and no query, clear results
         searchResults.value = []
         hasSearched.value = false
     }

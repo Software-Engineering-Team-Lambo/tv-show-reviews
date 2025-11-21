@@ -150,6 +150,7 @@ const search: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
           id: show.id,
           title: show.title,
           description: show.description,
+          posterPath: show.posterPath,
           releaseDate: show.releaseDate,
           genres: show.genres.map((g) => g.genre.name),
           rating: avgRating,

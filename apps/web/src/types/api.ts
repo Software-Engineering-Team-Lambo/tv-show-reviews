@@ -65,6 +65,26 @@ export interface SearchResult {
   reviewCount: number
   createdAt: string
   updatedAt: string
+  posterPath: string | null
+}
+
+export interface HomePageShow {
+  id: number
+  title: string
+  description: string | null
+  releaseDate: string | null
+  genres: string[]
+  rating: number
+  reviewCount: number
+  createdAt: string
+  updatedAt: string
+  posterPath: string | null
+}
+
+export interface HomePageResponse {
+  popularShows: HomePageShow[]
+  newReleases: HomePageShow[]
+  genres: Genre[]
 }
 
 export interface FilterOptions {

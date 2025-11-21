@@ -1,16 +1,53 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import Carousel from 'primevue/carousel'
+import Skeleton from 'primevue/skeleton'
 import ShowCard from '@/components/ShowCard.vue'
-import type { ShowCardData } from '@/types/api'
+import type { ShowCardData, HomePageResponse, Genre } from '@/types/api'
 
 const router = useRouter()
 
-const trendingShows = ref<ShowCardData[]>([])
-
+const popularShows = ref<ShowCardData[]>([])
 const newReleases = ref<ShowCardData[]>([])
+const genres = ref<Genre[]>([])
+const isLoading = ref(true)
+
+onMounted(async () => {
+  try {
+    const response = await fetch('/api/home-page')
+    const data: HomePageResponse = await response.json()
+
+    popularShows.value = data.popularShows.map((show) => ({
+      id: show.id,
+      title: show.title,
+      year: show.releaseDate ? new Date(show.releaseDate).getFullYear() : null,
+      description: show.description,
+      image: show.posterPath ?? undefined,
+      rating: show.rating,
+      reviews: show.reviewCount,
+      genre: show.genres,
+    }))
+
+    newReleases.value = data.newReleases.map((show) => ({
+      id: show.id,
+      title: show.title,
+      year: show.releaseDate ? new Date(show.releaseDate).getFullYear() : null,
+      description: show.description,
+      image: show.posterPath ?? undefined,
+      rating: show.rating,
+      reviews: show.reviewCount,
+      genre: show.genres,
+    }))
+
+    genres.value = data.genres
+  } catch (error) {
+    console.error('Failed to load home page data:', error)
+  } finally {
+    isLoading.value = false
+  }
+})
 
 const responsiveOptions = ref([
   {
@@ -53,7 +90,7 @@ const responsiveOptions = ref([
     </div>
 
     <div class="container mx-auto px-4 py-8">
-      <!-- Trending Shows Section -->
+      <!-- Popular Shows Section -->
       <section class="mb-12">
         <div class="flex justify-between items-center mb-6">
           <h2 class="text-3xl font-bold text-gray-800 dark:text-white">
@@ -62,7 +99,14 @@ const responsiveOptions = ref([
           <Button label="View All" text icon="pi pi-arrow-right" iconPos="right" @click="router.push('/search')" />
         </div>
 
-        <Carousel :value="trendingShows" :numVisible="4" :numScroll="1" :responsiveOptions="responsiveOptions">
+        <div v-if="isLoading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div v-for="i in 4" :key="i" class="p-2">
+            <Skeleton height="16rem" class="mb-2"></Skeleton>
+            <Skeleton width="75%" height="1.5rem" class="mb-2"></Skeleton>
+            <Skeleton width="50%" height="1rem"></Skeleton>
+          </div>
+        </div>
+        <Carousel v-else :value="popularShows" :numVisible="4" :numScroll="1" :responsiveOptions="responsiveOptions">
           <template #item="{ data }">
             <div class="p-2">
               <ShowCard :show="data" image-height="h-64" />
@@ -78,9 +122,20 @@ const responsiveOptions = ref([
           <Button label="View All" text icon="pi pi-arrow-right" iconPos="right" @click="router.push('/search')" />
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <ShowCard v-for="show in newReleases" :key="show.id" :show="show" image-height="h-64" />
+        <div v-if="isLoading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div v-for="i in 6" :key="i">
+            <Skeleton height="16rem" class="mb-2"></Skeleton>
+            <Skeleton width="75%" height="1.5rem" class="mb-2"></Skeleton>
+            <Skeleton width="50%" height="1rem"></Skeleton>
+          </div>
         </div>
+        <Carousel v-else :value="newReleases" :numVisible="4" :numScroll="1" :responsiveOptions="responsiveOptions">
+          <template #item="{ data }">
+            <div class="p-2">
+              <ShowCard :show="data" image-height="h-64" />
+            </div>
+          </template>
+        </Carousel>
       </section>
 
       <!-- Categories/Genres Section -->
@@ -88,9 +143,12 @@ const responsiveOptions = ref([
         <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-6">
           Browse by Genre
         </h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          <Button v-for="genre in ['Drama', 'Comedy', 'Sci-Fi', 'Horror', 'Action', 'Documentary']" :key="genre"
-            :label="genre" outlined class="h-16" @click="router.push({ name: 'search', query: { genre } })" />
+        <div v-if="isLoading" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <Skeleton v-for="i in 6" :key="i" height="4rem"></Skeleton>
+        </div>
+        <div v-else class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+          <Button v-for="genre in genres" :key="genre.id" :label="genre.name" outlined class="h-16"
+            @click="router.push({ name: 'search', query: { genre: genre.name } })" />
         </div>
       </section>
     </div>

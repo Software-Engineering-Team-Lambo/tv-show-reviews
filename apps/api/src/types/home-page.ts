@@ -2,6 +2,7 @@ export interface HomePageShow {
   id: number;
   title: string;
   description: string | null;
+  posterPath: string | null;
   releaseDate: Date | null;
   popularity: number | null;
   genres: string[];

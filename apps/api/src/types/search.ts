@@ -9,6 +9,7 @@ export interface SearchResult {
   id: number;
   title: string;
   description: string | null;
+  posterPath: string | null;
   releaseDate: Date | null;
   genres: string[];
   rating: number;
