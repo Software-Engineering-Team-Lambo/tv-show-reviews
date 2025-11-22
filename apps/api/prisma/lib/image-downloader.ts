@@ -2,13 +2,12 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import type { TmdbConfigurationResponse } from "../../src/types/tmdb.js";
 
-export const IMAGES_DIR = path.join(
-  process.cwd(),
-  "..",
-  "web",
-  "public",
-  "show_images"
-);
+// In production, this will be a Docker volume mounted at /app/show_images
+// In development, it will be relative to the workspace
+export const IMAGES_DIR =
+  process.env.NODE_ENV === "production"
+    ? "/app/show_images"
+    : path.join(process.cwd(), "..", "web", "public", "show_images");
 
 export async function getTmdbConfiguration(
   apiKey: string
@@ -27,11 +26,16 @@ export async function getTmdbConfiguration(
 export function setupImagesDirectory(): void {
   console.log("Setting up images directory...");
   if (fs.existsSync(IMAGES_DIR)) {
-    console.log("Deleting existing images directory...");
-    fs.rmSync(IMAGES_DIR, { recursive: true, force: true });
+    console.log("Clearing existing images...");
+    // Clear contents but don't delete the directory itself (it's a volume mount in production)
+    const files = fs.readdirSync(IMAGES_DIR);
+    for (const file of files) {
+      fs.rmSync(path.join(IMAGES_DIR, file), { force: true });
+    }
+  } else {
+    fs.mkdirSync(IMAGES_DIR, { recursive: true });
   }
-  fs.mkdirSync(IMAGES_DIR, { recursive: true });
-  console.log(`✅ Created images directory: ${IMAGES_DIR}`);
+  console.log(`✅ Images directory ready: ${IMAGES_DIR}`);
 }
 
 export async function downloadImage(
