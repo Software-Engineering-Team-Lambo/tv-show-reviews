@@ -10,6 +10,7 @@ services:
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./apps/web/dist:/srv/web:ro # Vue SPA static files
+      - show_images:/srv/show_images:ro # Persistent show poster images
       - caddy_data:/data
       - caddy_config:/config
     networks:
@@ -26,6 +27,8 @@ services:
       NODE_ENV: production
       DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
       TMDB_API_KEY: ${TMDB_API_KEY} # Only needed if running seed script
+    volumes:
+      - show_images:/app/show_images # Persistent storage for downloaded images
     networks:
       - caddy_net
       - db_net
@@ -106,3 +109,5 @@ volumes:
     name: tvshows_caddy_config
   mysql_data:
     name: tvshows_mysql_data
+  show_images:
+    name: tvshows_show_images
