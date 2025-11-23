@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import Card from 'primevue/card'
 import Button from 'primevue/button'
@@ -11,81 +11,63 @@ import Chip from 'primevue/chip'
 
 const router = useRouter()
 
-// TODO: Replace with actual user data from API
-const user = ref({
-    id: 1,
-    username: 'tv_enthusiast',
-    email: 'user@example.com',
-    joinDate: 'January 2023',
-    bio: 'Love watching TV shows and sharing my thoughts! Huge fan of sci-fi and drama series.',
-    stats: {
-        reviews: 42,
-        favorites: 15,
-        watchlist: 28,
-    },
+// reactive state, populated from /api/profile
+const user = ref<any>({
+    id: null,
+    username: '',
+    email: '',
+    joinDate: '',
+    bio: '',
+    stats: { reviews: 0, favorites: 0, watchlist: 0 },
 })
 
-// TODO: Replace with actual reviews from API
-const userReviews = ref([
-    {
-        id: 1,
-        showId: 1,
-        showTitle: 'Breaking Bad',
-        showImage: 'https://via.placeholder.com/150x225/4F46E5/FFFFFF?text=Breaking+Bad',
-        rating: 5,
-        reviewText: 'Absolutely phenomenal! One of the best TV shows ever made. The character development and storytelling are unmatched.',
-        date: '2024-01-15',
-        likes: 24,
-    },
-    {
-        id: 2,
-        showId: 2,
-        showTitle: 'Stranger Things',
-        showImage: 'https://via.placeholder.com/150x225/7C3AED/FFFFFF?text=Stranger+Things',
-        rating: 4,
-        reviewText: 'Great nostalgia vibes and excellent acting from the young cast. Season 1 was the strongest.',
-        date: '2024-01-10',
-        likes: 18,
-    },
-])
+const userReviews = ref<any[]>([])
+const favoriteShows = ref<any[]>([])
+const watchlist = ref<any[]>([])
+const loading = ref(true)
+const error = ref<string | null>(null)
 
-// TODO: Replace with actual favorites from API
-const favoriteShows = ref([
-    {
-        id: 1,
-        title: 'Breaking Bad',
-        image: 'https://via.placeholder.com/200x300/4F46E5/FFFFFF?text=Breaking+Bad',
-        rating: 4.8,
-    },
-    {
-        id: 3,
-        title: 'The Office',
-        image: 'https://via.placeholder.com/200x300/2563EB/FFFFFF?text=The+Office',
-        rating: 4.7,
-    },
-    {
-        id: 4,
-        title: 'Game of Thrones',
-        image: 'https://via.placeholder.com/200x300/DC2626/FFFFFF?text=Game+of+Thrones',
-        rating: 4.5,
-    },
-])
+// fetch profile from API on mount
+onMounted(async () => {
+    loading.value = true
+    error.value = null
+    try {
+        const res = await fetch('/api/profile')
+        if (!res.ok) {
+            const text = await res.text()
+            throw new Error(text || `HTTP ${res.status}`)
+        }
+        const data = await res.json()
 
-// TODO: Replace with actual watchlist from API
-const watchlist = ref([
-    {
-        id: 7,
-        title: 'The Last of Us',
-        image: 'https://via.placeholder.com/200x300/EA580C/FFFFFF?text=Last+of+Us',
-        rating: 4.9,
-    },
-    {
-        id: 8,
-        title: 'Wednesday',
-        image: 'https://via.placeholder.com/200x300/64748B/FFFFFF?text=Wednesday',
-        rating: 4.3,
-    },
-])
+        user.value = {
+            id: data.id,
+            username: data.username,
+            email: data.email,
+            joinDate: data.joinDate,
+            bio: data.bio,
+            stats: data.stats ?? { reviews: 0, favorites: 0, watchlist: 0 },
+        }
+
+        userReviews.value = (data.reviews || []).map((r: any) => ({
+            id: r.id,
+            showId: r.showId,
+            showTitle: r.showTitle,
+            showImage: r.showImage,
+            rating: r.rating,
+            reviewText: r.reviewText,
+            date: r.date,
+            likes: r.likes ?? 0,
+        }))
+
+        favoriteShows.value = data.favorites || []
+        watchlist.value = data.watchlist || []
+    } catch (e: any) {
+        console.error('Failed to load profile', e)
+        error.value = e?.message ?? String(e)
+    } finally {
+        loading.value = false
+    }
+})
 
 const navigateToShow = (id: number) => {
     router.push({ name: 'show-details', params: { id } })
