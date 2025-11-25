@@ -26,9 +26,12 @@ model User {
 model Show {
   id          Int      @id @default(autoincrement())
   title       String
-  year        Int?
+  popularity  Float?
   description String?  @db.Text
+  posterPath  String?
+  releaseDate DateTime?
   seasons     Int?
+  episodes    Int?
   status      String?  // e.g., "Ongoing", "Ended"
   reviews     Review[]
   genres      ShowGenre[]

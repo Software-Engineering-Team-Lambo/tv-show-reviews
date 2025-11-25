@@ -16,13 +16,21 @@ A TV show review app built with Vue, Fastify, and Prisma. Rate and review your f
 
 **Prerequisites:** Docker Desktop + VS Code with Dev Containers extension
 
-1. Open VS Code, press `Ctrl+Shift+P` (Mac: `Cmd+Shift+P`)
-2. Select "Dev Containers: Clone Repository in Container Volume"
-3. Paste: `https://github.com/Software-Engineering-Team-Lambo/tv-show-reviews`
-4. Wait for setup (a few minutes first time)
-5. Run: `cd apps/api && npx prisma migrate dev --name init`
-6. Run: `cd ../..`
-7. Run: `npm run dev`
+1. Open VS Code, clone repository, then press `Ctrl+Shift+P` (Mac: `Cmd+Shift+P`)
+2. Select "Dev Containers: Reopen in Container"
+3. Wait for setup (a few minutes first time)
+4. Setup TMDB API Key:
+   - Sign up at [The Movie Database (TMDB)](https://www.themoviedb.org/)
+   - Go to [API Settings](https://www.themoviedb.org/settings/api)
+   - Create an API key
+   - Open `apps/api/.env` and set your TMDB API key:
+     ```
+     TMDB_API_KEY="<your_tmdb_api_key_here>"
+     ```
+5. Run: `cd apps/api && npx prisma migrate dev`
+6. Run: `npm run seed`
+7. Run: `cd ../..`
+8. Run: `npm run dev`
 
 **Done!** Everything else is automatic. See [.devcontainer/README.md](.devcontainer/README.md) for details.
 
@@ -72,8 +80,6 @@ Choose one option:
    DATABASE_URL="mysql://username:password@127.0.0.1:3306/tv_ratings"
    ```
 
-💡 **Tip:** When you're done working, stop the database with `docker compose down`
-
 #### Option B: Local MySQL
 
 1. Install MySQL on your computer
@@ -84,16 +90,28 @@ Choose one option:
    ```
 4. Update `DATABASE_URL` in `apps/api/.env` with your MySQL credentials
 
-### 4. Initialize the Database
+### 4. Setup TMDB API Key
+
+1. Sign up at [The Movie Database (TMDB)](https://www.themoviedb.org/)
+2. Go to [API Settings](https://www.themoviedb.org/settings/api)
+3. Create an API key
+4. Open `apps/api/.env` and set your TMDB API key:
+5. For seeding TMDB data, get an API key from [TMDB](https://www.themoviedb.org/settings/api) and add it to `apps/api/.env`:
+   ```
+   TMDB_API_KEY="<your_tmdb_api_key_here>"
+   ```
+
+### 5. Initialize the Database
 
 ```bash
 cd apps/api
-npx prisma migrate dev --name init
+npx prisma migrate dev
 npx prisma generate
+npm run seed
 cd ../..
 ```
 
-### 5. Start Developing! 🚀
+### 6. Start Developing! 🚀
 
 ```bash
 npm run dev

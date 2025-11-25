@@ -8,7 +8,8 @@ services:
     command: sleep infinity
     network_mode: service:db
     env_file:
-      - ../apps/api/.env
+      - path: ../apps/api/.env
+        required: false
     environment:
       # Override DATABASE_URL for containerized development
       - DATABASE_URL=mysql://root:rootpass@localhost:3306/tv_ratings
