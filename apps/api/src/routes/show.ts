@@ -1,5 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { Type, Static } from "@sinclair/typebox";
+import type { ShowDetailsResponse } from "../types/show.js";
 
 const ParamsSchema = Type.Object({
   id: Type.String(),
@@ -17,17 +18,25 @@ const showRoute: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
     },
     async function (request, reply) {
       const id = Number(request.params.id);
-      if (Number.isNaN(id)) {
-        reply.code(400).send({ error: "Invalid id" });
+      if (!Number.isInteger(id) || id <= 0) {
+        reply
+          .code(400)
+          .send({ error: "Invalid id - must be a positive integer" });
         return;
       }
 
       // Fetch the show with related data
+      // Only fetch top 15 cast members sorted by order (billing priority)
       const show = await fastify.prisma.show.findUnique({
         where: { id },
         include: {
           genres: { include: { genre: true } },
-          cast: { include: { actor: true } },
+          creators: { include: { creator: true } },
+          cast: {
+            include: { actor: true },
+            orderBy: { order: "asc" },
+            take: 15,
+          },
           reviews: { include: { user: true } },
         },
       });
@@ -37,50 +46,23 @@ const showRoute: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
         return;
       }
 
-      // Calculate average rating
-      const reviewCount = show.reviews?.length ?? 0;
-      const avgRating =
-        reviewCount > 0
-          ? show.reviews.reduce((acc, r) => acc + (r.rating ?? 0), 0) /
-            reviewCount
-          : 0;
+      // Calculate average rating using database aggregation
+      const ratingStats = await fastify.prisma.review.aggregate({
+        where: { showId: id },
+        _avg: { rating: true },
+        _count: true,
+      });
 
-      // Prepare cast: sort by order (ascending) and take top 15
-      const orderedCast = (show.cast || [])
-        .slice()
-        .sort((a, b) => {
-          const oa = a.order ?? 9999;
-          const ob = b.order ?? 9999;
-          return oa - ob;
-        })
-        .slice(0, 15)
-        .map((c) => c.actor.name);
+      const avgRating = ratingStats._avg.rating ?? 0;
+      const reviewCount = ratingStats._count;
 
-      // Attempt to load creators. The Prisma schema currently doesn't store creators,
-      // so fallback to fetching from TMDB at runtime if API key is available.
-      let creators: string[] = [];
-      try {
-        if (process.env.TMDB_API_KEY) {
-          const tmdbRes = await fetch(
-            `https://api.themoviedb.org/3/tv/${show.id}?api_key=${process.env.TMDB_API_KEY}&language=en-US`
-          );
-          if (tmdbRes.ok) {
-            const tmdbData: any = await tmdbRes.json();
-            if (Array.isArray(tmdbData.created_by)) {
-              creators = tmdbData.created_by
-                .map((c: any) => c.name)
-                .filter(Boolean);
-            }
-          }
-        }
-      } catch (e) {
-        // ignore errors fetching TMDB; creators will remain empty
-        fastify.log.debug(
-          `Failed to fetch TMDB creators for show ${show.id}: ${e}`
-        );
-      }
+      // Prepare cast: already sorted and limited by the query
+      const orderedCast: string[] = show.cast.map((c) => c.actor.name);
 
-      const transformed = {
+      // Get creators from database
+      const creators: string[] = show.creators.map((c) => c.creator.name);
+
+      const transformed: ShowDetailsResponse = {
         id: show.id,
         title: show.title,
         year: show.releaseDate ? show.releaseDate.getFullYear() : null,
@@ -90,20 +72,19 @@ const showRoute: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
         // keep posterPath for frontend consistency with HomeView
         posterPath: show.posterPath ?? null,
         image: show.posterPath ?? null,
-        genres: show.genres?.map((g) => g.genre.name) ?? [],
+        genres: show.genres.map((g) => g.genre.name),
         cast: orderedCast,
         creators,
         rating: Number(avgRating.toFixed(2)),
         totalReviews: reviewCount,
-        reviews:
-          show.reviews?.map((r) => ({
-            id: r.id,
-            userId: r.userId,
-            username: r.user?.name ?? `user_${r.userId}`,
-            rating: r.rating,
-            reviewText: r.comment ?? null,
-            date: r.createdAt?.toISOString() ?? new Date().toISOString(),
-          })) ?? [],
+        reviews: show.reviews.map((r) => ({
+          id: r.id,
+          userId: r.userId,
+          username: r.user?.name ?? `user_${r.userId}`,
+          rating: r.rating,
+          reviewText: r.comment ?? null,
+          date: r.createdAt?.toISOString() ?? new Date().toISOString(),
+        })),
       };
 
       reply.send(transformed);

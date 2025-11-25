@@ -43,8 +43,12 @@ export interface Review {
   comment: string | null
   userId: number
   showId: number
-  createdAt: Date
-  updatedAt: Date
+  createdAt: string
+  updatedAt: string
+  username?: string
+  date?: string
+  reviewText?: string
+  likes?: number
 }
 
 // Search API types
@@ -93,12 +97,22 @@ export interface FilterOptions {
 }
 
 // Extended types for frontend display
-export interface ShowWithDetails extends Show {
-  genres?: ShowGenre[]
-  cast?: ShowCast[]
-  reviews?: Review[]
-  averageRating?: number
-  reviewCount?: number
+export interface ShowWithDetails {
+  id: number
+  title: string
+  year: number | null
+  description: string | null
+  seasons: number | null
+  status: string | null
+  posterPath: string | null
+  createdAt: string
+  updatedAt: string
+  genres: string[] // Array of genre names from API
+  cast: string[] // Array of actor names from API
+  creators: string[] // Array of creator names from API
+  reviews: Review[]
+  averageRating: number
+  reviewCount: number
 }
 
 // Type for display in cards and lists

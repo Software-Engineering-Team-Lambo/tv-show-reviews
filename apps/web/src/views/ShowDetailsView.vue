@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { useRoute } from 'vue-router'
 import Card from 'primevue/card'
 import Button from 'primevue/button'
 import Rating from 'primevue/rating'
@@ -10,7 +10,6 @@ import Textarea from 'primevue/textarea'
 import Avatar from 'primevue/avatar'
 
 
-const router = useRouter()
 const route = useRoute()
 
 type RawReview = {
@@ -19,12 +18,13 @@ type RawReview = {
     reviewText?: string
     comment?: string
     userId: number
+    username?: string
     date?: string
     likes?: number
 }
 
 const imageUrl = computed(() => {
-    return `/show_images${show.value.posterPath}`
+    return `/show_images${show.value?.posterPath ?? ''}`
 })
 
 // Loading / error state
@@ -59,20 +59,22 @@ const fetchShow = async (id: number) => {
             posterPath: data.posterPath ?? data.image ?? null,
             createdAt: data.createdAt ?? new Date().toISOString(),
             updatedAt: data.updatedAt ?? new Date().toISOString(),
-            genres: (data.genres || []).map((name: string) => ({ genre: { id: 0, name } })),
-            // backend returns an array of actor names (top 15); keep as strings for display
-            cast: (data.cast || []),
-            creators: (data.creators || []),
-
+            genres: data.genres || [],
+            cast: data.cast || [],
+            creators: data.creators || [],
             reviews: (data.reviews || []).map((r: RawReview) => ({
-                    id: r.id,
-                    rating: r.rating,
-                    comment: r.reviewText ?? r.comment ?? null,
-                    userId: r.userId,
-                    showId: data.id,
-                    createdAt: r.date ?? new Date().toISOString(),
-                    updatedAt: r.date ?? new Date().toISOString(),
-                })),
+                id: r.id,
+                rating: r.rating,
+                comment: r.reviewText ?? r.comment ?? null,
+                reviewText: r.reviewText ?? r.comment ?? null,
+                userId: r.userId,
+                username: r.username,
+                showId: data.id,
+                createdAt: r.date ?? new Date().toISOString(),
+                updatedAt: r.date ?? new Date().toISOString(),
+                date: r.date,
+                likes: r.likes ?? 0,
+            })),
             averageRating: data.rating ?? 0,
             reviewCount: data.totalReviews ?? (data.reviews?.length ?? 0),
         }
@@ -81,10 +83,14 @@ const fetchShow = async (id: number) => {
             id: r.id,
             rating: r.rating,
             comment: r.reviewText ?? null,
+            reviewText: r.reviewText ?? null,
             userId: r.userId,
+            username: r.username,
             showId: data.id,
             createdAt: r.date ?? new Date().toISOString(),
             updatedAt: r.date ?? new Date().toISOString(),
+            date: r.date,
+            likes: r.likes ?? 0,
         }))
     } catch (err: unknown) {
         console.error(err)
@@ -160,37 +166,45 @@ const likeReview = (reviewId: number) => {
                                 <div class="flex flex-wrap gap-2 mb-4">
                                     <Chip :label="String(show?.year ?? '')" />
                                     <Chip :label="`${show?.seasons ?? 0} Seasons`" />
-                                    <Chip :label="show?.status" severity="success" />
+                                    <Chip :label="show?.status ?? 'Unknown'" severity="success" />
                                 </div>
 
                                 <div class="flex items-center gap-4 mb-4">
                                     <div class="flex items-center gap-2">
-                                        <Rating :modelValue="show?.averageRating ?? show?.rating" readonly :cancel="false" />
-                                        <span class="text-2xl font-bold">{{ show?.averageRating ?? show?.rating ?? 0 }}</span>
+                                        <Rating :modelValue="show?.averageRating" readonly :cancel="false" />
+                                        <span class="text-2xl font-bold">{{ show?.averageRating ?? 0 }}</span>
                                     </div>
-                                    <span class="text-gray-600 dark:text-gray-400">{{ show?.reviewCount ?? show?.totalReviews ?? 0 }} reviews</span>
+                                    <span class="text-gray-600 dark:text-gray-400">{{ show?.reviewCount ?? 0 }}
+                                        reviews</span>
                                 </div>
 
                                 <div class="flex flex-wrap gap-2 mb-6">
-                                    <Chip v-for="genre in (show?.genres || [])" :key="genre.genre?.name ?? genre" :label="genre.genre?.name ?? genre" outlined />
+                                    <Chip v-for="genre in (show?.genres || [])" :key="genre" :label="genre" outlined />
                                 </div>
 
-                                <p class="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">{{ show?.description }}</p>
+                                <p class="text-gray-700 dark:text-gray-300 mb-6 leading-relaxed">{{ show?.description }}
+                                </p>
 
                                 <div class="mb-4">
-                                    <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Created by</h3>
+                                    <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Created by
+                                    </h3>
                                     <p class="text-gray-800 dark:text-white">{{ (show?.creators || []).join(', ') }}</p>
                                 </div>
 
                                 <div class="mb-6">
-                                    <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Starring</h3>
-                                    <p class="text-gray-800 dark:text-white">{{ (show?.cast || []).map(c => c.actor?.name ?? c).join(', ') }}</p>
+                                    <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Starring
+                                    </h3>
+                                    <p class="text-gray-800 dark:text-white">{{ (show?.cast || []).join(', ') }}</p>
                                 </div>
 
                                 <!-- Action Buttons -->
                                 <div class="flex gap-3">
-                                    <Button :label="isFavorite ? 'Remove from Favorites' : 'Add to Favorites'" :icon="isFavorite ? 'pi pi-heart-fill' : 'pi pi-heart'" :severity="isFavorite ? 'danger' : 'secondary'" @click="toggleFavorite" />
-                                    <Button :label="inWatchlist ? 'In Watchlist' : 'Add to Watchlist'" :icon="inWatchlist ? 'pi pi-check' : 'pi pi-plus'" :outlined="!inWatchlist" @click="toggleWatchlist" />
+                                    <Button :label="isFavorite ? 'Remove from Favorites' : 'Add to Favorites'"
+                                        :icon="isFavorite ? 'pi pi-heart-fill' : 'pi pi-heart'"
+                                        :severity="isFavorite ? 'danger' : 'secondary'" @click="toggleFavorite" />
+                                    <Button :label="inWatchlist ? 'In Watchlist' : 'Add to Watchlist'"
+                                        :icon="inWatchlist ? 'pi pi-check' : 'pi pi-plus'" :outlined="!inWatchlist"
+                                        @click="toggleWatchlist" />
                                 </div>
                             </div>
                         </div>
@@ -212,10 +226,12 @@ const likeReview = (reviewId: number) => {
 
                                     <div>
                                         <label class="block text-sm font-medium mb-2">Your Review</label>
-                                        <Textarea v-model="userReview" rows="4" placeholder="Share your thoughts about this show..." class="w-full" />
+                                        <Textarea v-model="userReview" rows="4"
+                                            placeholder="Share your thoughts about this show..." class="w-full" />
                                     </div>
 
-                                    <Button label="Submit Review" icon="pi pi-send" @click="submitReview" :disabled="!userRating || !userReview.trim()" />
+                                    <Button label="Submit Review" icon="pi pi-send" @click="submitReview"
+                                        :disabled="!userRating || !userReview.trim()" />
                                 </div>
                             </template>
                         </Card>
@@ -232,24 +248,30 @@ const likeReview = (reviewId: number) => {
                                 <div class="space-y-6">
                                     <div v-for="(review, index) in reviews" :key="review.id">
                                         <div class="flex gap-4">
-                                            <Avatar :label="review.username?.[0]?.toUpperCase() || 'U'" shape="circle" class="bg-indigo-600 text-white" />
+                                            <Avatar :label="review.username?.[0]?.toUpperCase() || 'U'" shape="circle"
+                                                class="bg-indigo-600 text-white" />
 
                                             <div class="flex-1">
                                                 <div class="flex justify-between items-start mb-2">
                                                     <div>
-                                                        <h4 class="font-semibold text-gray-800 dark:text-white">{{ review.username }}</h4>
+                                                        <h4 class="font-semibold text-gray-800 dark:text-white">{{
+                                                            review.username }}</h4>
                                                         <div class="flex items-center gap-2 mt-1">
-                                                            <Rating :modelValue="review.rating" readonly :cancel="false" class="text-sm" />
+                                                            <Rating :modelValue="review.rating" readonly :cancel="false"
+                                                                class="text-sm" />
                                                             <span class="text-xs text-gray-600">{{ review.date }}</span>
                                                         </div>
                                                     </div>
                                                 </div>
 
-                                                <p class="text-gray-700 dark:text-gray-300 mb-3">{{ review.reviewText }}</p>
+                                                <p class="text-gray-700 dark:text-gray-300 mb-3">{{ review.reviewText }}
+                                                </p>
 
                                                 <div class="flex items-center gap-4">
-                                                    <Button :label="`Helpful (${review.likes})`" icon="pi pi-thumbs-up" text size="small" @click="likeReview(review.id)" />
-                                                    <Button label="Report" icon="pi pi-flag" text severity="secondary" size="small" />
+                                                    <Button :label="`Helpful (${review.likes})`" icon="pi pi-thumbs-up"
+                                                        text size="small" @click="likeReview(review.id)" />
+                                                    <Button label="Report" icon="pi pi-flag" text severity="secondary"
+                                                        size="small" />
                                                 </div>
                                             </div>
                                         </div>
@@ -284,9 +306,15 @@ const likeReview = (reviewId: number) => {
                             <template #title>Stats</template>
                             <template #content>
                                 <div class="space-y-3">
-                                    <div class="flex justify-between"><span class="text-gray-600">Total Reviews</span><span class="font-semibold">{{ show?.reviewCount ?? show?.totalReviews ?? 0 }}</span></div>
-                                    <div class="flex justify-between"><span class="text-gray-600">Average Rating</span><span class="font-semibold">{{ show?.averageRating ?? show?.rating ?? 0 }}/5</span></div>
-                                    <div class="flex justify-between"><span class="text-gray-600">Status</span><Chip :label="show?.status" size="small" severity="success" /></div>
+                                    <div class="flex justify-between"><span class="text-gray-600">Total
+                                            Reviews</span><span class="font-semibold">{{ show?.reviewCount ?? 0
+                                            }}</span></div>
+                                    <div class="flex justify-between"><span class="text-gray-600">Average
+                                            Rating</span><span class="font-semibold">{{ show?.averageRating ?? 0
+                                            }}/5</span></div>
+                                    <div class="flex justify-between"><span class="text-gray-600">Status</span>
+                                        <Chip :label="show?.status ?? 'Unknown'" size="small" severity="success" />
+                                    </div>
                                 </div>
                             </template>
                         </Card>
