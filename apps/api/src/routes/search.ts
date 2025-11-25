@@ -64,6 +64,17 @@ const search: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
               },
             },
           },
+          {
+            creators: {
+              some: {
+                creator: {
+                  name: {
+                    contains: query,
+                  },
+                },
+              },
+            },
+          },
         ];
       }
 
