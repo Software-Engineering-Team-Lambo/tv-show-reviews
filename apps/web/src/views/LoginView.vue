@@ -11,6 +11,7 @@ const router = useRouter()
 const activeTab = ref<'login' | 'signup'>('login')
 const showForgotPassword = ref(false)
 const errorMessage = ref('')
+const loading = ref(false)
 
 // Form fields
 const email = ref('')
@@ -19,21 +20,44 @@ const confirmPassword = ref('')
 const username = ref('')
 const emailOrUsername = ref('')
 
-const handleLogin = () => {
-    errorMessage.value = '';
+const handleLogin = async () => {
+    errorMessage.value = ''
+    loading.value = true
 
     if (!emailOrUsername.value || !password.value) {
         errorMessage.value = 'Need to fill out Username/Email and Password fields.';
         return;
     }
 
+    try {
+        const response = await fetch('/api/loginSignup/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                emailOrUsername: emailOrUsername.value,
+                password: password.value
+            })
+        });
 
-    // TODO: Implement login logic
-    console.log('Login:', { email: email.value, password: password.value })
-    router.push('/')
+        const data = await response.json();
+
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify(data.user))
+
+        router.push('/')
+    } catch (error) {
+        console.error('Login failed:', error)
+        errorMessage.value = error.response?.data?.error
+            || error.response?.data?.message
+            || 'Login failed. Please try again.'
+    } finally {
+        loading.value = false
+    }
 }
 
-const handleSignup = () => {
+const handleSignup = async () => {
     errorMessage.value = '';
 
     if (!username.value || !email.value || !password.value || !confirmPassword.value) {
@@ -51,20 +75,27 @@ const handleSignup = () => {
         return;
     }
 
+    loading.value = true
+
     try {
+        const response = await axios.post('/api/loginSignup/signup', {
+            username: username.value,
+            email: email.value,
+            password: password.value
+        })
 
+        localStorage.setItem('token', response.data.token)
+        localStorage.setItem('user', JSON.stringify(response.data.user))
+
+        router.push('/')
+    } catch (error) {
+        console.error('Signup failed:', error)
+        errorMessage.value = error.response?.data?.error
+            || error.respone?.data?.message
+            || 'Signup failed. Please try again.'
+    } finally {
+        loading.value = false
     }
-    catch () {
-
-    }
-
-    // TODO: Implement signup logic
-    console.log('Signup:', {
-        username: username.value,
-        email: email.value,
-        password: password.value,
-    })
-    router.push('/')
 }
 
 const handleForgotPassword = () => {

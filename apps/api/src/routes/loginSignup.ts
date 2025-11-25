@@ -1,6 +1,7 @@
 import { FastifyPluginAsync } from "fastify";
 import { Static, Type } from "@sinclair/typebox";
 import argon2 from "argon2";
+import jwt from "jsonwebtoken";
 
 // Define the signup request schema
 const SignupBodySchema = Type.Object({
@@ -38,8 +39,16 @@ const LoginBodySchema = Type.Object({
 type LoginBody = Static<typeof LoginBodySchema>;
 
 const loginSignup: FastifyPluginAsync = async (fastify) => {
+  const generateToken = (userId: number, email: string): string => {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error("JWT_SECRET is not defined in environment variables");
+    }
+    return jwt.sign({ userId, email }, secret, { expiresIn: "3h" });
+  };
+
   fastify.post<{ Body: SignupBody }>(
-    "/api/signup",
+    "/api/loginSignup/signup",
     {
       schema: {
         body: SignupBodySchema,
@@ -97,7 +106,9 @@ const loginSignup: FastifyPluginAsync = async (fastify) => {
           },
         });
 
-        return reply.send({ user });
+        const token = generateToken(user.id, user.email);
+
+        return reply.send({ token, user });
       } catch (error) {
         console.log("Error Signing Up", error);
         return reply.status(500).send({
@@ -108,7 +119,7 @@ const loginSignup: FastifyPluginAsync = async (fastify) => {
   );
 
   fastify.post<{ Body: LoginBody }>(
-    "/api/login",
+    "/api/loginSignup/login",
     {
       schema: {
         body: LoginBodySchema,
@@ -144,10 +155,13 @@ const loginSignup: FastifyPluginAsync = async (fastify) => {
           });
         }
 
+        const token = generateToken(user.id, user.email);
+
         return reply.send({
+          token,
           user: {
             id: user.id,
-            username: user.username as string,
+            username: user.username,
             email: user.email,
           },
         });
