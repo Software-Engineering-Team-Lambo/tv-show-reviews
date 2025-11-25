@@ -1,7 +1,6 @@
 import { FastifyPluginAsync } from "fastify";
 import { Static, Type } from "@sinclair/typebox";
 import argon2 from "argon2";
-import jwt from "jsonwebtoken";
 
 // Define the signup request schema
 const SignupBodySchema = Type.Object({
@@ -39,12 +38,8 @@ const LoginBodySchema = Type.Object({
 type LoginBody = Static<typeof LoginBodySchema>;
 
 const loginSignup: FastifyPluginAsync = async (fastify) => {
-  const generateToken = (userId: number, email: string): string => {
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
-      throw new Error("JWT_SECRET is not defined in environment variables");
-    }
-    return jwt.sign({ userId, email }, secret, { expiresIn: "7D" });
+  const generateToken = (userId: number) => {
+    return fastify.jwt.sign({ userId }, { expiresIn: "7d" });
   };
 
   fastify.post<{ Body: SignupBody }>(
@@ -106,9 +101,18 @@ const loginSignup: FastifyPluginAsync = async (fastify) => {
           },
         });
 
-        const token = generateToken(user.id, user.email);
+        const token = generateToken(user.id);
 
-        return reply.send({ token, user });
+        // Set httpOnly cookie instead of returning token
+        reply.setCookie("token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+        });
+
+        return reply.send({ user });
       } catch (error) {
         console.log("Error Signing Up", error);
         return reply.status(500).send({
@@ -155,24 +159,34 @@ const loginSignup: FastifyPluginAsync = async (fastify) => {
           });
         }
 
-        const token = generateToken(user.id, user.email);
+        const token = generateToken(user.id);
 
-        return reply.send({
-          token,
-          user: {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-          },
+        // Set httpOnly cookie instead of returning token
+        reply.setCookie("token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: "lax",
+          path: "/",
+          maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
         });
+
+        return reply.send({ success: true });
       } catch (error) {
-        console.log("Error Loging In", error);
+        console.log("Error Logging In", error);
         return reply.status(500).send({
-          message: "Error Loginig In",
+          message: "Error Logging In",
         });
       }
     }
   );
+
+  // Logout route - clears the cookie
+  fastify.post("/api/loginSignup/logout", async (_request, reply) => {
+    reply.clearCookie("token", {
+      path: "/",
+    });
+    return reply.send({ message: "Logged out successfully" });
+  });
 
   //to be added later
   fastify.post("/api/forgot-password", async (_request, _reply) => {});

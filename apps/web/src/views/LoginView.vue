@@ -6,8 +6,10 @@ import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Card from 'primevue/card'
 import Divider from 'primevue/divider'
+import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const activeTab = ref<'login' | 'signup'>('login')
 const showForgotPassword = ref(false)
 const errorMessage = ref('')
@@ -25,74 +27,48 @@ const handleLogin = async () => {
     loading.value = true
 
     if (!emailOrUsername.value || !password.value) {
-        errorMessage.value = 'Need to fill out Username/Email and Password fields.';
-        return;
+        errorMessage.value = 'Need to fill out Username/Email and Password fields.'
+        loading.value = false
+        return
     }
 
     try {
-        const response = await fetch('/api/loginSignup/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                emailOrUsername: emailOrUsername.value,
-                password: password.value
-            })
-        });
-
-        const data = await response.json();
-
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('user', JSON.stringify(data.user))
-
+        await authStore.login(emailOrUsername.value, password.value)
         router.push('/')
-    } catch (error) {
+    } catch (error: any) {
         console.error('Login failed:', error)
-        errorMessage.value = error.response?.data?.error
-            || error.response?.data?.message
-            || 'Login failed. Please try again.'
+        errorMessage.value = error.message || 'Login failed. Please try again.'
     } finally {
         loading.value = false
     }
 }
 
 const handleSignup = async () => {
-    errorMessage.value = '';
+    errorMessage.value = ''
 
     if (!username.value || !email.value || !password.value || !confirmPassword.value) {
-        errorMessage.value = 'All fields must be filled out.';
-        return;
+        errorMessage.value = 'All fields must be filled out.'
+        return
     }
 
     if (password.value.length < 8) {
-        errorMessage.value = 'Password must be at least 8 characters long.';
-        return;
+        errorMessage.value = 'Password must be at least 8 characters long.'
+        return
     }
 
     if (password.value !== confirmPassword.value) {
-        errorMessage.value = 'Passwords need to match.';
-        return;
+        errorMessage.value = 'Passwords need to match.'
+        return
     }
 
     loading.value = true
 
     try {
-        const response = await axios.post('/api/loginSignup/signup', {
-            username: username.value,
-            email: email.value,
-            password: password.value
-        })
-
-        localStorage.setItem('token', response.data.token)
-        localStorage.setItem('user', JSON.stringify(response.data.user))
-
+        await authStore.signup(username.value, email.value, password.value)
         router.push('/')
-    } catch (error) {
+    } catch (error: any) {
         console.error('Signup failed:', error)
-        errorMessage.value = error.response?.data?.error
-            || error.respone?.data?.message
-            || 'Signup failed. Please try again.'
+        errorMessage.value = error.message || 'Signup failed. Please try again.'
     } finally {
         loading.value = false
     }
