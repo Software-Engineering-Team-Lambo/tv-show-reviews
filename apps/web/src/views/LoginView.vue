@@ -130,7 +130,8 @@ const handleForgotPassword = () => {
                     <!-- Login Form -->
                     <form v-if="activeTab === 'login'" @submit.prevent="handleLogin" class="space-y-4">
                         <div>
-                            <label for="login-email-username" class="block text-sm font-medium mb-2">Email</label>
+                            <label for="login-email-username" class="block text-sm font-medium mb-2">Email or
+                                Username</label>
                             <InputText id="login-email-username" v-model="emailOrUsername" type="email-username"
                                 placeholder="Enter your email or username" class="w-full" required />
                         </div>
