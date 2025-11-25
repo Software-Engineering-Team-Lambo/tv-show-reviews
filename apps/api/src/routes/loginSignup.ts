@@ -44,7 +44,7 @@ const loginSignup: FastifyPluginAsync = async (fastify) => {
     if (!secret) {
       throw new Error("JWT_SECRET is not defined in environment variables");
     }
-    return jwt.sign({ userId, email }, secret, { expiresIn: "3h" });
+    return jwt.sign({ userId, email }, secret, { expiresIn: "7D" });
   };
 
   fastify.post<{ Body: SignupBody }>(
