@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Card from 'primevue/card'
 import Button from 'primevue/button'
 import Rating from 'primevue/rating'
@@ -8,9 +8,11 @@ import Chip from 'primevue/chip'
 import Divider from 'primevue/divider'
 import Textarea from 'primevue/textarea'
 import Avatar from 'primevue/avatar'
+import ShowDetailsSkeleton from '@/components/ShowDetailsSkeleton.vue'
 
 
 const route = useRoute()
+const router = useRouter()
 
 type RawReview = {
     id: number
@@ -142,13 +144,18 @@ const likeReview = (reviewId: number) => {
     // TODO: Call API to like review
     console.log('Like review:', reviewId)
 }
+
+const searchByName = (name: string) => {
+    // Navigate to search page with the name as query
+    router.push({ name: 'search', query: { q: name } })
+}
 </script>
 
 <template>
-    <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
+    <ShowDetailsSkeleton v-if="isLoading" />
+    <div v-else class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
         <div class="container mx-auto px-4">
-            <div v-if="isLoading" class="py-24 text-center text-gray-600">Loading show...</div>
-            <div v-else-if="error" class="py-24 text-center text-red-500">{{ error }}</div>
+            <div v-if="error" class="py-24 text-center text-red-500">{{ error }}</div>
             <div v-else>
                 <!-- Show Header -->
                 <Card class="mb-8">
@@ -188,13 +195,29 @@ const likeReview = (reviewId: number) => {
                                 <div class="mb-4">
                                     <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Created by
                                     </h3>
-                                    <p class="text-gray-800 dark:text-white">{{ (show?.creators || []).join(', ') }}</p>
+                                    <p class="text-gray-800 dark:text-white">
+                                        <span v-for="(creator, index) in (show?.creators || [])" :key="creator">
+                                            <button @click="searchByName(creator)"
+                                                class="hover:text-indigo-600 hover:underline cursor-pointer transition-colors">
+                                                {{ creator }}
+                                            </button>
+                                            <span v-if="index < (show?.creators || []).length - 1">, </span>
+                                        </span>
+                                    </p>
                                 </div>
 
                                 <div class="mb-6">
                                     <h3 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">Starring
                                     </h3>
-                                    <p class="text-gray-800 dark:text-white">{{ (show?.cast || []).join(', ') }}</p>
+                                    <p class="text-gray-800 dark:text-white">
+                                        <span v-for="(actor, index) in (show?.cast || [])" :key="actor">
+                                            <button @click="searchByName(actor)"
+                                                class="hover:text-indigo-600 hover:underline cursor-pointer transition-colors">
+                                                {{ actor }}
+                                            </button>
+                                            <span v-if="index < (show?.cast || []).length - 1">, </span>
+                                        </span>
+                                    </p>
                                 </div>
 
                                 <!-- Action Buttons -->
