@@ -170,7 +170,7 @@ const loginSignup: FastifyPluginAsync = async (fastify) => {
           maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
         });
 
-        return reply.send({ success: true });
+        return reply.send({ user });
       } catch (error) {
         console.log("Error Logging In", error);
         return reply.status(500).send({
