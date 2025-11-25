@@ -7,8 +7,13 @@ export interface ShowReview {
   userId: number;
   username: string;
   rating: number;
+  comment: string | null;
   reviewText: string | null;
+  createdAt: string;
+  updatedAt: string;
   date: string;
+  showId: number;
+  likes: number;
 }
 
 export interface ShowDetailsResponse {
@@ -19,11 +24,10 @@ export interface ShowDetailsResponse {
   seasons: number | null;
   status: string | null;
   posterPath: string | null;
-  image: string | null;
   genres: string[];
   cast: string[];
   creators: string[];
-  rating: number;
-  totalReviews: number;
+  averageRating: number;
+  reviewCount: number;
   reviews: ShowReview[];
 }

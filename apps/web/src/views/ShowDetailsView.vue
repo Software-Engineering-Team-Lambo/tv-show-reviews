@@ -14,17 +14,6 @@ import ShowDetailsSkeleton from '@/components/ShowDetailsSkeleton.vue'
 const route = useRoute()
 const router = useRouter()
 
-type RawReview = {
-    id: number
-    rating: number
-    reviewText?: string
-    comment?: string
-    userId: number
-    username?: string
-    date?: string
-    likes?: number
-}
-
 const imageUrl = computed(() => {
     return `/show_images${show.value?.posterPath ?? ''}`
 })
@@ -49,51 +38,9 @@ const fetchShow = async (id: number) => {
     try {
         const res = await fetch(`/api/show/${id}`)
         if (!res.ok) throw new Error(`Failed to fetch show (${res.status})`)
-        const data = await res.json()
-        // Map backend shape to view model
-        show.value = {
-            id: data.id,
-            title: data.title,
-            year: data.year,
-            description: data.description,
-            seasons: data.seasons,
-            status: data.status,
-            posterPath: data.posterPath ?? data.image ?? null,
-            createdAt: data.createdAt ?? new Date().toISOString(),
-            updatedAt: data.updatedAt ?? new Date().toISOString(),
-            genres: data.genres || [],
-            cast: data.cast || [],
-            creators: data.creators || [],
-            reviews: (data.reviews || []).map((r: RawReview) => ({
-                id: r.id,
-                rating: r.rating,
-                comment: r.reviewText ?? r.comment ?? null,
-                reviewText: r.reviewText ?? r.comment ?? null,
-                userId: r.userId,
-                username: r.username,
-                showId: data.id,
-                createdAt: r.date ?? new Date().toISOString(),
-                updatedAt: r.date ?? new Date().toISOString(),
-                date: r.date,
-                likes: r.likes ?? 0,
-            })),
-            averageRating: data.rating ?? 0,
-            reviewCount: data.totalReviews ?? (data.reviews?.length ?? 0),
-        }
-
-        reviews.value = (data.reviews || []).map((r: RawReview) => ({
-            id: r.id,
-            rating: r.rating,
-            comment: r.reviewText ?? null,
-            reviewText: r.reviewText ?? null,
-            userId: r.userId,
-            username: r.username,
-            showId: data.id,
-            createdAt: r.date ?? new Date().toISOString(),
-            updatedAt: r.date ?? new Date().toISOString(),
-            date: r.date,
-            likes: r.likes ?? 0,
-        }))
+        const data: ShowWithDetails = await res.json()
+        show.value = data
+        reviews.value = data.reviews
     } catch (err: unknown) {
         console.error(err)
         const message = err instanceof Error ? err.message : String(err)
@@ -264,11 +211,21 @@ const searchByName = (name: string) => {
                             <template #title>
                                 <div class="flex justify-between items-center">
                                     <span>User Reviews ({{ reviews.length }})</span>
-                                    <Button label="Sort by: Most Helpful" text size="small" />
+                                    <Button v-if="reviews.length > 0" label="Sort by: Most Helpful" text size="small" />
                                 </div>
                             </template>
                             <template #content>
-                                <div class="space-y-6">
+                                <!-- Empty State -->
+                                <div v-if="reviews.length === 0" class="text-center py-12">
+                                    <i class="pi pi-comments text-6xl text-gray-300 mb-4"></i>
+                                    <h3 class="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">No Reviews
+                                        Yet</h3>
+                                    <p class="text-gray-500 dark:text-gray-500">Be the first to share your thoughts
+                                        about this show!</p>
+                                </div>
+
+                                <!-- Reviews List -->
+                                <div v-else class="space-y-6">
                                     <div v-for="(review, index) in reviews" :key="review.id">
                                         <div class="flex gap-4">
                                             <Avatar :label="review.username?.[0]?.toUpperCase() || 'U'" shape="circle"

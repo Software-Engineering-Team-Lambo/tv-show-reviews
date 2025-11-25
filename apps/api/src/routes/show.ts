@@ -1,6 +1,5 @@
 import { FastifyPluginAsync } from "fastify";
 import { Type, Static } from "@sinclair/typebox";
-import type { ShowDetailsResponse } from "../types/show.js";
 
 const ParamsSchema = Type.Object({
   id: Type.String(),
@@ -62,28 +61,31 @@ const showRoute: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
       // Get creators from database
       const creators: string[] = show.creators.map((c) => c.creator.name);
 
-      const transformed: ShowDetailsResponse = {
+      const transformed = {
         id: show.id,
         title: show.title,
         year: show.releaseDate ? show.releaseDate.getFullYear() : null,
         description: show.description,
         seasons: show.seasons,
         status: show.status,
-        // keep posterPath for frontend consistency with HomeView
         posterPath: show.posterPath ?? null,
-        image: show.posterPath ?? null,
         genres: show.genres.map((g) => g.genre.name),
         cast: orderedCast,
         creators,
-        rating: Number(avgRating.toFixed(2)),
-        totalReviews: reviewCount,
+        averageRating: Number(avgRating.toFixed(2)),
+        reviewCount: reviewCount,
         reviews: show.reviews.map((r) => ({
           id: r.id,
           userId: r.userId,
           username: r.user?.name ?? `user_${r.userId}`,
           rating: r.rating,
+          comment: r.comment ?? null,
           reviewText: r.comment ?? null,
+          createdAt: r.createdAt?.toISOString() ?? new Date().toISOString(),
+          updatedAt: r.updatedAt?.toISOString() ?? new Date().toISOString(),
           date: r.createdAt?.toISOString() ?? new Date().toISOString(),
+          showId: show.id,
+          likes: 0,
         })),
       };
 

@@ -96,7 +96,7 @@ export interface FilterOptions {
   years: number[]
 }
 
-// Extended types for frontend display
+// Show Details Response - matches backend exactly
 export interface ShowWithDetails {
   id: number
   title: string
@@ -105,14 +105,12 @@ export interface ShowWithDetails {
   seasons: number | null
   status: string | null
   posterPath: string | null
-  createdAt: string
-  updatedAt: string
-  genres: string[] // Array of genre names from API
-  cast: string[] // Array of actor names from API
-  creators: string[] // Array of creator names from API
-  reviews: Review[]
+  genres: string[]
+  cast: string[]
+  creators: string[]
   averageRating: number
   reviewCount: number
+  reviews: Review[]
 }
 
 // Type for display in cards and lists
