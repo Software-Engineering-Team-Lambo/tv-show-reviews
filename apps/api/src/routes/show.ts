@@ -24,33 +24,32 @@ const showRoute: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
         return;
       }
 
-      // Fetch the show with related data
-      // Only fetch top 15 cast members sorted by order (billing priority)
-      const show = await fastify.prisma.show.findUnique({
-        where: { id },
-        include: {
-          genres: { include: { genre: true } },
-          creators: { include: { creator: true } },
-          cast: {
-            include: { actor: true },
-            orderBy: { order: "asc" },
-            take: 15,
+      // Fetch show data and calculate ratings in parallel
+      const [show, ratingStats] = await Promise.all([
+        fastify.prisma.show.findUnique({
+          where: { id },
+          include: {
+            genres: { include: { genre: true } },
+            creators: { include: { creator: true } },
+            cast: {
+              include: { actor: true },
+              orderBy: { order: "asc" },
+              take: 15,
+            },
+            reviews: { include: { user: true } },
           },
-          reviews: { include: { user: true } },
-        },
-      });
+        }),
+        fastify.prisma.review.aggregate({
+          where: { showId: id },
+          _avg: { rating: true },
+          _count: true,
+        }),
+      ]);
 
       if (!show) {
         reply.code(404).send({ error: "Show not found" });
         return;
       }
-
-      // Calculate average rating using database aggregation
-      const ratingStats = await fastify.prisma.review.aggregate({
-        where: { showId: id },
-        _avg: { rating: true },
-        _count: true,
-      });
 
       const avgRating = ratingStats._avg.rating ?? 0;
       const reviewCount = ratingStats._count;
