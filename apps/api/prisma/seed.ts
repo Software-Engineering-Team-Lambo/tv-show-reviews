@@ -119,6 +119,34 @@ async function saveShowGenres(
 }
 
 /**
+ * Fetch and save creators for a show
+ */
+async function saveShowCreators(
+  showId: number,
+  showData: TmdbShowDetails
+): Promise<void> {
+  if (showData.created_by.length === 0) return;
+
+  // Create all creators
+  await prisma.creator.createMany({
+    data: showData.created_by.map((creator) => ({
+      id: creator.id,
+      name: creator.name,
+    })),
+    skipDuplicates: true,
+  });
+
+  // Assign creators to show
+  await prisma.showCreator.createMany({
+    data: showData.created_by.map((creator) => ({
+      showId: showId,
+      creatorId: creator.id,
+    })),
+    skipDuplicates: true,
+  });
+}
+
+/**
  * Fetch and save cast members for a show
  */
 async function saveShowCast(
@@ -182,6 +210,9 @@ async function enrichShowDetails(
 
     // Save genres
     await saveShowGenres(show.id, showData);
+
+    // Save creators
+    await saveShowCreators(show.id, showData);
 
     // Save cast members
     await saveShowCast(apiKey, show.id, show.title);
