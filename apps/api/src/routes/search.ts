@@ -6,7 +6,7 @@ import type {
   SortBy,
   ShowWhereInput,
   ShowOrderByInput,
-} from "../types/search";
+} from "../types/search.js";
 
 // Define the search request schema
 const SearchBodySchema = Type.Object({

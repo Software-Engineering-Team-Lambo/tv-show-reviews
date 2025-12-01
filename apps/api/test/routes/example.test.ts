@@ -1,13 +1,23 @@
-import { test } from 'node:test'
-import * as assert from 'node:assert'
-import { build } from '../helper'
+import { describe, it, expect, beforeAll, afterAll } from "vitest";
+import { FastifyInstance } from "fastify";
+import { buildApp } from "../helper.js";
 
-test('example is loaded', async (t) => {
-  const app = await build(t)
+describe("GET /example", () => {
+  let app: FastifyInstance;
 
-  const res = await app.inject({
-    url: '/example'
-  })
+  beforeAll(async () => {
+    app = await buildApp();
+  });
 
-  assert.equal(res.payload, 'this is an example')
-})
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it("returns example message", async () => {
+    const res = await app.inject({
+      url: "/example",
+    });
+
+    expect(res.payload).toBe("this is an example");
+  });
+});
