@@ -2,11 +2,17 @@ import { execSync } from "node:child_process";
 import dotenv from "dotenv";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import fs from "node:fs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Load test environment variables with correct credentials
-dotenv.config({ path: path.join(__dirname, "../.env.test"), override: true });
+// Load test environment variables:
+// - In CI: env vars are already set by GitHub Actions
+// - Locally: load from .env.test file
+const envTestPath = path.join(__dirname, "../.env.test");
+if (fs.existsSync(envTestPath)) {
+  dotenv.config({ path: envTestPath, override: true });
+}
 
 export default async function globalSetup() {
   console.log("🧹 Setting up test database...");

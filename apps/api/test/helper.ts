@@ -2,11 +2,17 @@
 import dotenv from "dotenv";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import fs from "node:fs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Load test .env to use the separate test database
-dotenv.config({ path: path.join(__dirname, "../.env.test"), override: true });
+// Load test environment variables:
+// - In CI: env vars are already set by GitHub Actions
+// - Locally: load from .env.test file
+const envTestPath = path.join(__dirname, "../.env.test");
+if (fs.existsSync(envTestPath)) {
+  dotenv.config({ path: envTestPath, override: true });
+}
 
 import Fastify from "fastify";
 import { PrismaClient } from "../generated/prisma/index.js";

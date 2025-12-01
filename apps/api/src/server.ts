@@ -1,4 +1,14 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+
+// Load environment variables:
+// - In CI: env vars are already set, dotenv just fills in any gaps
+// - Locally with DOTENV_CONFIG_PATH: load from that file (e.g., .env.test for E2E tests)
+// - Locally otherwise: load from .env
+dotenv.config({
+  path: process.env.DOTENV_CONFIG_PATH || ".env",
+  override: false, // Don't override existing env vars (CI sets them directly)
+});
+
 import Fastify from "fastify";
 import { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import app from "./app.js";

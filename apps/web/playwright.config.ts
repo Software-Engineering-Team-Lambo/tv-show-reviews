@@ -43,11 +43,9 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
       env: {
-        // Use the test database for E2E tests
-        DATABASE_URL:
-          process.env.DATABASE_URL || 'mysql://root:rootpass@localhost:3306/tv_ratings_test',
-        TMDB_API_KEY: process.env.TMDB_API_KEY || '',
-        JWT_SECRET: 'test-jwt-secret',
+        ...process.env,
+        // Locally: use .env.test; CI: env vars are already set and won't be overridden
+        ...(process.env.CI ? {} : { DOTENV_CONFIG_PATH: '.env.test' }),
       },
     },
     {
