@@ -33,7 +33,7 @@ async function createSampleUsers() {
   const user1 = await prisma.user.create({
     data: {
       email: "alice@example.com",
-      name: "Alice Johnson",
+      username: "Alice",
       password_hash: "hashed_password_placeholder",
     },
   });
@@ -41,7 +41,7 @@ async function createSampleUsers() {
   const user2 = await prisma.user.create({
     data: {
       email: "bob@example.com",
-      name: "Bob Smith",
+      username: "Bob",
       password_hash: "hashed_password_placeholder",
     },
   });

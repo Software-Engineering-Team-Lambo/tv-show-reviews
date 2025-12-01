@@ -6,31 +6,72 @@ import InputText from 'primevue/inputtext'
 import Password from 'primevue/password'
 import Card from 'primevue/card'
 import Divider from 'primevue/divider'
+import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const activeTab = ref<'login' | 'signup'>('login')
 const showForgotPassword = ref(false)
+const errorMessage = ref('')
+const loading = ref(false)
 
 // Form fields
 const email = ref('')
 const password = ref('')
 const confirmPassword = ref('')
 const username = ref('')
+const emailOrUsername = ref('')
 
-const handleLogin = () => {
-    // TODO: Implement login logic
-    console.log('Login:', { email: email.value, password: password.value })
-    router.push('/')
+const handleLogin = async () => {
+    errorMessage.value = ''
+    loading.value = true
+
+    if (!emailOrUsername.value || !password.value) {
+        errorMessage.value = 'Need to fill out Username/Email and Password fields.'
+        loading.value = false
+        return
+    }
+
+    try {
+        await authStore.login(emailOrUsername.value, password.value)
+        router.push('/')
+    } catch (error: any) {
+        console.error('Login failed:', error)
+        errorMessage.value = error.message || 'Login failed. Please try again.'
+    } finally {
+        loading.value = false
+    }
 }
 
-const handleSignup = () => {
-    // TODO: Implement signup logic
-    console.log('Signup:', {
-        username: username.value,
-        email: email.value,
-        password: password.value,
-    })
-    router.push('/')
+const handleSignup = async () => {
+    errorMessage.value = ''
+
+    if (!username.value || !email.value || !password.value || !confirmPassword.value) {
+        errorMessage.value = 'All fields must be filled out.'
+        return
+    }
+
+    if (password.value.length < 8) {
+        errorMessage.value = 'Password must be at least 8 characters long.'
+        return
+    }
+
+    if (password.value !== confirmPassword.value) {
+        errorMessage.value = 'Passwords need to match.'
+        return
+    }
+
+    loading.value = true
+
+    try {
+        await authStore.signup(username.value, email.value, password.value)
+        router.push('/')
+    } catch (error: any) {
+        console.error('Signup failed:', error)
+        errorMessage.value = error.message || 'Signup failed. Please try again.'
+    } finally {
+        loading.value = false
+    }
 }
 
 const handleForgotPassword = () => {
@@ -89,9 +130,10 @@ const handleForgotPassword = () => {
                     <!-- Login Form -->
                     <form v-if="activeTab === 'login'" @submit.prevent="handleLogin" class="space-y-4">
                         <div>
-                            <label for="login-email" class="block text-sm font-medium mb-2">Email</label>
-                            <InputText id="login-email" v-model="email" type="email" placeholder="Enter your email"
-                                class="w-full" required />
+                            <label for="login-email-username" class="block text-sm font-medium mb-2">Email or
+                                Username</label>
+                            <InputText id="login-email-username" v-model="emailOrUsername" type="email-username"
+                                placeholder="Enter your email or username" class="w-full" required />
                         </div>
 
                         <div>

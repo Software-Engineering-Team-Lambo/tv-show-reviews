@@ -2,6 +2,9 @@ import { join } from "node:path";
 import AutoLoad, { AutoloadPluginOptions } from "@fastify/autoload";
 import { FastifyPluginAsync, FastifyServerOptions } from "fastify";
 import { TypeBoxValidatorCompiler } from "@fastify/type-provider-typebox";
+import fastifyJwt from "@fastify/jwt";
+import fastifyCookie from "@fastify/cookie";
+import "dotenv/config";
 
 export interface AppOptions
   extends FastifyServerOptions,
@@ -17,6 +20,18 @@ const app: FastifyPluginAsync<AppOptions> = async (
   fastify.setValidatorCompiler(TypeBoxValidatorCompiler);
 
   // Place here your custom code!
+
+  // Register cookie support (required for JWT cookies)
+  void fastify.register(fastifyCookie);
+
+  // Register JWT with cookie support
+  void fastify.register(fastifyJwt, {
+    secret: process.env.JWT_SECRET || "your-secret-key-change-in-production",
+    cookie: {
+      cookieName: "token",
+      signed: false,
+    },
+  });
 
   // Do not touch the following lines
 
