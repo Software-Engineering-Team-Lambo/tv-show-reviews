@@ -33,12 +33,30 @@ model Show {
   seasons     Int?
   episodes    Int?
   status      String?  // e.g., "Ongoing", "Ended"
+  creators    ShowCreator[]
   reviews     Review[]
   genres      ShowGenre[]
   cast        ShowCast[]
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model Creator {
+  id    Int           @id // TMDB creator ID
+  name  String
+  shows ShowCreator[]
+  
+  createdAt DateTime @default(now())
+}
+
+model ShowCreator {
+  show      Show    @relation(fields: [showId], references: [id], onDelete: Cascade)
+  showId    Int
+  creator   Creator @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  creatorId Int
+
+  @@id([showId, creatorId])
 }
 
 model Genre {
