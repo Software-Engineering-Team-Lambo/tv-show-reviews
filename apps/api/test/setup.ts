@@ -1,9 +1,12 @@
 import { execSync } from "node:child_process";
 import dotenv from "dotenv";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-// Load test environment variables
-dotenv.config({ path: path.join(__dirname, "../.env.test") });
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Load test environment variables with correct credentials
+dotenv.config({ path: path.join(__dirname, "../.env.test"), override: true });
 
 export default async function globalSetup() {
   console.log("🧹 Setting up test database...");

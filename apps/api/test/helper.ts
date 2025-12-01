@@ -1,9 +1,12 @@
 // This file contains code that we reuse between our tests.
 import dotenv from "dotenv";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-// Load test environment BEFORE importing anything that uses the database
-dotenv.config({ path: path.join(__dirname, "../.env.test") });
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Load test .env to use the separate test database
+dotenv.config({ path: path.join(__dirname, "../.env.test"), override: true });
 
 import Fastify from "fastify";
 import { PrismaClient } from "../generated/prisma/index.js";

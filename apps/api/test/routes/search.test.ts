@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { FastifyInstance } from "fastify";
 import { buildApp, prisma } from "../helper.js";
 
-describe("GET /search", () => {
+describe("POST /api/search", () => {
   let app: FastifyInstance;
   let sampleShow: { id: number; title: string };
 
@@ -26,53 +26,54 @@ describe("GET /search", () => {
     const searchTerm = sampleShow.title.split(" ")[0];
 
     const response = await app.inject({
-      method: "GET",
-      url: `/search?q=${encodeURIComponent(searchTerm)}`,
+      method: "POST",
+      url: "/api/search",
+      payload: { query: searchTerm },
     });
 
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.payload);
-    expect(body).toHaveProperty("results");
-    expect(Array.isArray(body.results)).toBe(true);
-    expect(body.results.length).toBeGreaterThan(0);
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBeGreaterThan(0);
   });
 
   it("should return empty results for non-matching query", async () => {
     const response = await app.inject({
-      method: "GET",
-      url: "/search?q=xyznonexistentshow123",
+      method: "POST",
+      url: "/api/search",
+      payload: { query: "xyznonexistentshow123456" },
     });
 
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.payload);
-    expect(body.results).toHaveLength(0);
+    expect(body).toHaveLength(0);
   });
 
-  it("should be case insensitive", async () => {
-    const searchTerm = sampleShow.title.toLowerCase();
-
+  it("should return all shows when no query provided", async () => {
     const response = await app.inject({
-      method: "GET",
-      url: `/search?q=${encodeURIComponent(searchTerm)}`,
+      method: "POST",
+      url: "/api/search",
+      payload: {},
     });
 
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.payload);
-    expect(body.results.length).toBeGreaterThan(0);
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBeGreaterThan(0);
   });
 
   it("should include genres in results", async () => {
-    const searchTerm = sampleShow.title.split(" ")[0];
-
     const response = await app.inject({
-      method: "GET",
-      url: `/search?q=${encodeURIComponent(searchTerm)}`,
+      method: "POST",
+      url: "/api/search",
+      payload: { query: sampleShow.title },
     });
 
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.payload);
-    expect(body.results[0]).toHaveProperty("genres");
-    expect(Array.isArray(body.results[0].genres)).toBe(true);
+    expect(body.length).toBeGreaterThan(0);
+    expect(body[0]).toHaveProperty("genres");
+    expect(Array.isArray(body[0].genres)).toBe(true);
   });
 
   it("should search by actor name", async () => {
@@ -91,13 +92,14 @@ describe("GET /search", () => {
     }
 
     const response = await app.inject({
-      method: "GET",
-      url: `/search?q=${encodeURIComponent(actor.name)}`,
+      method: "POST",
+      url: "/api/search",
+      payload: { query: actor.name },
     });
 
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.payload);
-    expect(body.results.length).toBeGreaterThan(0);
+    expect(body.length).toBeGreaterThan(0);
   });
 
   it("should search by creator name", async () => {
@@ -116,42 +118,91 @@ describe("GET /search", () => {
     }
 
     const response = await app.inject({
-      method: "GET",
-      url: `/search?q=${encodeURIComponent(creator.name)}`,
+      method: "POST",
+      url: "/api/search",
+      payload: { query: creator.name },
     });
 
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.payload);
-    expect(body.results.length).toBeGreaterThan(0);
-  });
-
-  it("should handle empty query string", async () => {
-    const response = await app.inject({
-      method: "GET",
-      url: "/search?q=",
-    });
-
-    expect(response.statusCode).toBe(200);
-    const body = JSON.parse(response.payload);
-    expect(body).toHaveProperty("results");
-    expect(Array.isArray(body.results)).toBe(true);
+    expect(body.length).toBeGreaterThan(0);
   });
 
   it("should return show with required fields", async () => {
-    const searchTerm = sampleShow.title.split(" ")[0];
-
     const response = await app.inject({
-      method: "GET",
-      url: `/search?q=${encodeURIComponent(searchTerm)}`,
+      method: "POST",
+      url: "/api/search",
+      payload: { query: sampleShow.title },
     });
 
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.payload);
 
-    const result = body.results[0];
+    const result = body[0];
     expect(result).toHaveProperty("id");
     expect(result).toHaveProperty("title");
     expect(result).toHaveProperty("posterPath");
     expect(result).toHaveProperty("genres");
+    expect(result).toHaveProperty("rating");
+    expect(result).toHaveProperty("reviewCount");
+  });
+
+  it("should filter by genre", async () => {
+    // Get a genre that has shows
+    const genre = await prisma.genre.findFirst({
+      where: {
+        shows: {
+          some: {},
+        },
+      },
+    });
+
+    if (!genre) {
+      console.log("Skipping genre filter test - no genres found");
+      return;
+    }
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/search",
+      payload: { genres: [genre.name] },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.payload);
+    expect(body.length).toBeGreaterThan(0);
+    // All results should have this genre
+    body.forEach((show: { genres: string[] }) => {
+      expect(show.genres).toContain(genre.name);
+    });
+  });
+});
+
+describe("GET /api/search/filters", () => {
+  let app: FastifyInstance;
+
+  beforeAll(async () => {
+    app = await buildApp();
+  });
+
+  afterAll(async () => {
+    await app.close();
+    await prisma.$disconnect();
+  });
+
+  it("should return available genres and years", async () => {
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/search/filters",
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.payload);
+
+    expect(body).toHaveProperty("genres");
+    expect(Array.isArray(body.genres)).toBe(true);
+
+    expect(body).toHaveProperty("years");
+    expect(Array.isArray(body.years)).toBe(true);
   });
 });

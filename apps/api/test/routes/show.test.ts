@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { FastifyInstance } from "fastify";
 import { buildApp, prisma } from "../helper.js";
 
-describe("GET /show/:id", () => {
+describe("GET /api/show/:id", () => {
   let app: FastifyInstance;
   let firstShow: { id: number; title: string };
 
@@ -24,43 +24,40 @@ describe("GET /show/:id", () => {
   it("should return 400 for non-numeric id", async () => {
     const response = await app.inject({
       method: "GET",
-      url: "/show/abc",
+      url: "/api/show/abc",
     });
 
     expect(response.statusCode).toBe(400);
     const body = JSON.parse(response.payload);
-    expect(body.error).toBe("Bad Request");
-    expect(body.message).toContain("Invalid show ID");
+    expect(body.error).toContain("Invalid id");
   });
 
   it("should return 400 for negative id", async () => {
     const response = await app.inject({
       method: "GET",
-      url: "/show/-5",
+      url: "/api/show/-5",
     });
 
     expect(response.statusCode).toBe(400);
     const body = JSON.parse(response.payload);
-    expect(body.error).toBe("Bad Request");
-    expect(body.message).toContain("Invalid show ID");
+    expect(body.error).toContain("Invalid id");
   });
 
   it("should return 404 for non-existent show", async () => {
     const response = await app.inject({
       method: "GET",
-      url: "/show/999999999",
+      url: "/api/show/999999999",
     });
 
     expect(response.statusCode).toBe(404);
     const body = JSON.parse(response.payload);
-    expect(body.error).toBe("Not Found");
-    expect(body.message).toContain("Show not found");
+    expect(body.error).toBe("Show not found");
   });
 
   it("should return show details for a valid show", async () => {
     const response = await app.inject({
       method: "GET",
-      url: `/show/${firstShow.id}`,
+      url: `/api/show/${firstShow.id}`,
     });
 
     expect(response.statusCode).toBe(200);
@@ -119,7 +116,7 @@ describe("GET /show/:id", () => {
 
     const response = await app.inject({
       method: "GET",
-      url: `/show/${showWithManyCast.id}`,
+      url: `/api/show/${showWithManyCast.id}`,
     });
 
     expect(response.statusCode).toBe(200);
@@ -154,7 +151,7 @@ describe("GET /show/:id", () => {
 
     const response = await app.inject({
       method: "GET",
-      url: `/show/${showWithReviews.id}`,
+      url: `/api/show/${showWithReviews.id}`,
     });
 
     expect(response.statusCode).toBe(200);
@@ -162,7 +159,6 @@ describe("GET /show/:id", () => {
     const body = JSON.parse(response.payload);
 
     expect(body.reviews.length).toBeGreaterThan(0);
-    expect(body.reviews[0]).toHaveProperty("user");
-    expect(body.reviews[0].user).toHaveProperty("name");
+    expect(body.reviews[0]).toHaveProperty("username");
   });
 });
