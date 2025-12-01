@@ -8,6 +8,13 @@ couchcritics.org {
         reverse_proxy api:3000
     }
 
+    # Serve show poster images from persistent volume
+    handle /show_images/* {
+        root * /srv
+        encode gzip
+        file_server
+    }
+
     # Serve Vue SPA static files (as a fallback)
     handle {
         root * /srv/web

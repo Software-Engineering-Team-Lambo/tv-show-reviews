@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import Card from 'primevue/card'
 import Button from 'primevue/button'
 import Avatar from 'primevue/avatar'
@@ -27,39 +27,49 @@ const watchlist = ref<any[]>([])
 const loading = ref(true)
 const error = ref<string | null>(null)
 
-// fetch profile from API on mount
+const route = useRoute()
+
+// fetch profile from API on mount — prefer route `:id` when available so UI reflects DB-backed user
 onMounted(async () => {
     loading.value = true
     error.value = null
     try {
-        const res = await fetch('/api/profile')
+        const routeId = route.params.id as string | undefined
+        const fetchUrl = routeId ? `/api/profile?id=${routeId}` : '/api/profile'
+        const res = await fetch(fetchUrl)
         if (!res.ok) {
             const text = await res.text()
             throw new Error(text || `HTTP ${res.status}`)
         }
         const data = await res.json()
 
+        // Map user fields with fallbacks to support session-only or DB-backed responses
         user.value = {
-            id: data.id,
-            username: data.username,
-            email: data.email,
-            joinDate: data.joinDate,
-            bio: data.bio,
+            id: data.id ?? null,
+            username: data.username ?? data.name ?? "",
+            email: data.email ?? null,
+            joinDate:
+                data.joinDate ?? (data.createdAt ? new Date(data.createdAt).toISOString().split("T")[0] : ""),
+            bio: data.bio ?? "",
             stats: data.stats ?? { reviews: 0, favorites: 0, watchlist: 0 },
         }
 
+        // Normalize reviews. Accept either the frontend-shaped review objects or
+        // DB-shaped ones (with nested `show`) or session-shaped ones.
         userReviews.value = (data.reviews || []).map((r: any) => ({
             id: r.id,
-            showId: r.showId,
-            showTitle: r.showTitle,
-            showImage: r.showImage,
-            rating: r.rating,
-            reviewText: r.reviewText,
-            date: r.date,
+            showId: r.showId ?? r.show?.id ?? null,
+            showTitle: r.showTitle ?? r.show?.title ?? r.show?.name ?? "",
+            showImage: r.showImage ?? r.show?.image ?? null,
+            rating: r.rating ?? r.score ?? 0,
+            reviewText: r.reviewText ?? r.comment ?? "",
+            date: r.date ?? (r.createdAt ? new Date(r.createdAt).toISOString().split("T")[0] : ""),
             likes: r.likes ?? 0,
         }))
 
+        // Favorites: mapped from `data.favorites` (user's favorite shows)
         favoriteShows.value = data.favorites || []
+        // Watchlist: mapped from `data.watchlist` (user's saved to-watch list)
         watchlist.value = data.watchlist || []
     } catch (e: any) {
         console.error('Failed to load profile', e)
@@ -73,9 +83,46 @@ const navigateToShow = (id: number) => {
     router.push({ name: 'show-details', params: { id } })
 }
 
+// Edit UI state
+const editing = ref(false)
+const editName = ref('')
+const saving = ref(false)
+
 const editProfile = () => {
-    // TODO: Implement edit profile
-    console.log('Edit profile clicked')
+    editing.value = true
+    editName.value = user.value.username || ''
+}
+
+const cancelEdit = () => {
+    editing.value = false
+    editName.value = ''
+}
+
+const saveProfile = async () => {
+    if (!editName.value || editName.value.trim() === '') return
+    saving.value = true
+    try {
+        const idParam = user.value?.id ? `?id=${user.value.id}` : ''
+        const res = await fetch(`/api/profile${idParam}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: editName.value.trim() }),
+        })
+        if (!res.ok) {
+            const text = await res.text()
+            throw new Error(text || `HTTP ${res.status}`)
+        }
+        const data = await res.json()
+        // update local state with returned profile
+        user.value.username = data.username ?? data.name ?? editName.value.trim()
+        user.value.email = data.email ?? user.value.email
+        editing.value = false
+    } catch (e: any) {
+        console.error('Failed to save profile', e)
+        error.value = e?.message ?? String(e)
+    } finally {
+        saving.value = false
+    }
 }
 </script>
 
@@ -101,7 +148,20 @@ const editProfile = () => {
                                         Member since {{ user.joinDate }}
                                     </p>
                                 </div>
-                                <Button label="Edit Profile" icon="pi pi-pencil" outlined @click="editProfile" />
+                                <div>
+                                    <template v-if="!editing">
+                                        <Button label="Edit Profile" icon="pi pi-pencil" outlined
+                                            @click="editProfile" />
+                                    </template>
+                                    <template v-else>
+                                        <div class="flex items-center gap-2">
+                                            <input v-model="editName" class="border rounded px-3 py-2 text-sm" />
+                                            <Button label="Save" icon="pi pi-check" @click="saveProfile"
+                                                :loading="saving" />
+                                            <Button label="Cancel" text icon="pi pi-times" @click="cancelEdit" />
+                                        </div>
+                                    </template>
+                                </div>
                             </div>
 
                             <p class="text-gray-700 dark:text-gray-300 mb-4">
