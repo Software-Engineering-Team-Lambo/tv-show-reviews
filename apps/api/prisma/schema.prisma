@@ -20,6 +20,8 @@ model User {
   username      String   @unique
   password_hash String
   reviews   Review[]
+  favorites Favorite[]
+  watchlist Watchlist[]
   createdAt DateTime @default(now())
 }
 
@@ -35,6 +37,8 @@ model Show {
   status      String?  // e.g., "Ongoing", "Ended"
   creators    ShowCreator[]
   reviews     Review[]
+  favorites   Favorite[]
+  watchlists  Watchlist[]
   genres      ShowGenre[]
   cast        ShowCast[]
   
@@ -105,4 +109,29 @@ model Review {
   updatedAt DateTime @updatedAt
 
   @@unique([userId, showId]) // Ensure a user can only review a show once
+}
+
+// User favorites (many-to-many via explicit join table)
+model Favorite {
+  id      Int   @id @default(autoincrement())
+  user    User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId  Int
+  show    Show  @relation(fields: [showId], references: [id], onDelete: Cascade)
+  showId  Int
+  createdAt DateTime @default(now())
+
+  @@unique([userId, showId])
+}
+
+// User watchlist (explicit join table allowing additional metadata)
+model Watchlist {
+  id       Int   @id @default(autoincrement())
+  user     User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   Int
+  show     Show  @relation(fields: [showId], references: [id], onDelete: Cascade)
+  showId   Int
+  addedAt  DateTime @default(now())
+  note     String?
+
+  @@unique([userId, showId])
 }
