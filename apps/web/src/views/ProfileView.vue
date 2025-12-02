@@ -2,6 +2,7 @@
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
+import type { UserProfile, ProfileStats } from '../types/api'
 import Card from 'primevue/card'
 import Button from 'primevue/button'
 import Avatar from 'primevue/avatar'
@@ -17,7 +18,7 @@ const router = useRouter()
 const authStore = useAuthStore()
 
 // User data
-const user = ref<any>(null)
+const user = ref<UserProfile | null>(null)
 const loading = ref(true)
 const errorMessage = ref('')
 const successMessage = ref('')
@@ -29,7 +30,7 @@ const editLoading = ref(false)
 const editError = ref('')
 
 // Computed stats
-const stats = computed(() => ({
+const stats = computed<ProfileStats>(() => ({
     reviewsCount: user.value?.reviews?.length || 0,
     favoritesCount: user.value?.favorites?.length || 0,
     watchlistCount: user.value?.watchlist?.length || 0
@@ -59,9 +60,9 @@ const fetchProfile = async () => {
         const data = await response.json()
         user.value = data.user;
 
-    } catch (error: any) {
+    } catch (error) {
         console.error('Failed to fetch profile:', error)
-        errorMessage.value = error.message || 'Failed to load profile. Please try again.'
+        errorMessage.value = error instanceof Error ? error.message : 'Failed to load profile. Please try again.'
     } finally {
         loading.value = false
     }
@@ -89,6 +90,7 @@ const navigateToShow = (showId: number) => {
 
 // Open edit dialog
 const openEditDialog = () => {
+    if (!user.value) return
     editUsername.value = user.value.username
     editError.value = ''
     showEditDialog.value = true
@@ -125,7 +127,7 @@ const handleUpdateUsername = async () => {
         return
     }
 
-    if (editUsername.value === user.value.username) {
+    if (editUsername.value === user.value?.username) {
         editError.value = 'Please enter a different username'
         return
     }
@@ -150,7 +152,7 @@ const handleUpdateUsername = async () => {
         }
 
         const data = await response.json()
-        user.value = data
+        user.value = data.user
         successMessage.value = 'Username updated successfully!'
         showEditDialog.value = false
 
@@ -159,9 +161,9 @@ const handleUpdateUsername = async () => {
             successMessage.value = ''
         }, 3000)
 
-    } catch (error: any) {
+    } catch (error) {
         console.error('Failed to update username:', error)
-        editError.value = error.message || 'Failed to update username'
+        editError.value = error instanceof Error ? error.message : 'Failed to update username'
     } finally {
         editLoading.value = false
     }
@@ -294,7 +296,7 @@ onMounted(() => {
                 <TabView>
 
                     <!-- Reviews Tab -->
-                    <TabPanel>
+                    <TabPanel value="reviews">
                         <template #header>
                             <div class="flex items-center gap-2">
                                 <i class="pi pi-star"></i>
@@ -357,7 +359,7 @@ onMounted(() => {
                     </TabPanel>
 
                     <!-- Favorites Tab -->
-                    <TabPanel>
+                    <TabPanel value="favorites">
                         <template #header>
                             <div class="flex items-center gap-2">
                                 <i class="pi pi-heart-fill"></i>
@@ -400,7 +402,7 @@ onMounted(() => {
                     </TabPanel>
 
                     <!-- Watchlist Tab -->
-                    <TabPanel>
+                    <TabPanel value="watchlist">
                         <template #header>
                             <div class="flex items-center gap-2">
                                 <i class="pi pi-bookmark"></i>
