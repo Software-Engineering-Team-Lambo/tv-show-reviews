@@ -53,7 +53,7 @@ const getNote = (item: ProfileFavorite | ProfileWatchlistItem): string | null =>
             @click="navigateToShow(item.show.id)">
             <template #header>
                 <img :src="getPosterUrl(item.show.posterPath)" :alt="item.show.title"
-                    class="w-full h-64 object-cover" />
+                    class="w-full aspect-[2/3] overflow-hidden bg-gray-200 dark:bg-gray-700" />
             </template>
             <template #title>
                 <div class="text-sm font-semibold truncate" :title="item.show.title">
