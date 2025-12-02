@@ -90,6 +90,17 @@ export interface UserProfile {
   watchlist: ProfileWatchlistItem[]
 }
 
+export interface ProfilePagination {
+  reviews: PaginationInfo
+  favorites: PaginationInfo
+  watchlist: PaginationInfo
+}
+
+export interface ProfileResponse {
+  user: UserProfile
+  pagination: ProfilePagination
+}
+
 export interface ProfileStats {
   reviewsCount: number
   favoritesCount: number
@@ -102,6 +113,8 @@ export interface SearchRequestBody {
   genres?: string[]
   year?: number
   sortBy?: 'rating' | 'reviews' | 'year' | 'title'
+  page?: number
+  limit?: number
 }
 
 export interface SearchResult {
@@ -115,6 +128,11 @@ export interface SearchResult {
   createdAt: string
   updatedAt: string
   posterPath: string | null
+}
+
+export interface PaginatedSearchResponse {
+  results: SearchResult[]
+  pagination: PaginationInfo
 }
 
 export interface HomePageShow {

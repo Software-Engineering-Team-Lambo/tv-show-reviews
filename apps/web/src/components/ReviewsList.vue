@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import Rating from 'primevue/rating'
 import Button from 'primevue/button'
 import Avatar from 'primevue/avatar'
@@ -24,6 +25,8 @@ const emit = defineEmits<{
     loadMore: []
 }>()
 
+const router = useRouter()
+
 const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('en-US', {
@@ -34,6 +37,12 @@ const formatDate = (dateString: string) => {
 }
 
 const canLoadMore = computed(() => props.pagination?.hasMore ?? false)
+
+const navigateToUserProfile = (username: string | undefined) => {
+    if (username) {
+        router.push({ name: 'user-profile', params: { username } })
+    }
+}
 </script>
 
 <template>
@@ -49,13 +58,17 @@ const canLoadMore = computed(() => props.pagination?.hasMore ?? false)
         <div v-for="(review, index) in reviews" :key="review.id">
             <div class="flex gap-4">
                 <Avatar :label="review.username?.[0]?.toUpperCase() || 'U'" shape="circle"
-                    class="bg-indigo-600 text-white" />
+                    class="bg-indigo-600 text-white cursor-pointer hover:opacity-80 transition-opacity"
+                    @click="navigateToUserProfile(review.username)" />
 
                 <div class="flex-1">
                     <div class="flex justify-between items-start mb-2">
                         <div>
                             <div class="flex items-center gap-2">
-                                <h4 class="font-semibold text-gray-800 dark:text-white">{{ review.username }}</h4>
+                                <h4 class="font-semibold text-gray-800 dark:text-white cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                                    @click="navigateToUserProfile(review.username)">
+                                    {{ review.username }}
+                                </h4>
                                 <span v-if="review.userId === currentUserId"
                                     class="text-xs bg-indigo-100 text-indigo-700 dark:bg-indigo-900 dark:text-indigo-300 px-2 py-0.5 rounded">
                                     You

@@ -1,24 +1,30 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
-import type { UserProfile, ProfileStats, ProfilePagination, ProfileReview, ProfileFavorite, ProfileWatchlistItem } from '../types/api'
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import type { ProfilePagination, ProfileReview, ProfileFavorite, ProfileWatchlistItem, ProfileStats } from '../types/api'
 import Button from 'primevue/button'
 import Message from 'primevue/message'
 import ProfileHeader from '@/components/profile/ProfileHeader.vue'
 import ProfileTabs from '@/components/profile/ProfileTabs.vue'
-import EditUsernameDialog from '@/components/profile/EditUsernameDialog.vue'
 import ProfileSkeleton from '@/components/profile/ProfileSkeleton.vue'
 
+interface PublicUser {
+    id: number
+    username: string
+    createdAt: string
+    reviews: ProfileReview[]
+    favorites: ProfileFavorite[]
+    watchlist: ProfileWatchlistItem[]
+}
+
+const route = useRoute()
 const router = useRouter()
-const authStore = useAuthStore()
 
 // User data
-const user = ref<UserProfile | null>(null)
+const user = ref<PublicUser | null>(null)
 const loading = ref(true)
 const loadingMore = ref({ reviews: false, favorites: false, watchlist: false })
 const errorMessage = ref('')
-const successMessage = ref('')
 
 // Pagination
 const pagination = ref<ProfilePagination | null>(null)
@@ -26,35 +32,27 @@ const allReviews = ref<ProfileReview[]>([])
 const allFavorites = ref<ProfileFavorite[]>([])
 const allWatchlist = ref<ProfileWatchlistItem[]>([])
 
-// Edit username dialog
-const showEditDialog = ref(false)
-
-// Computed stats (use pagination totals when available)
+// Stats
 const stats = computed<ProfileStats>(() => ({
     reviewsCount: pagination.value?.reviews.totalCount ?? allReviews.value.length,
     favoritesCount: pagination.value?.favorites.totalCount ?? allFavorites.value.length,
     watchlistCount: pagination.value?.watchlist.totalCount ?? allWatchlist.value.length
 }))
 
-// Fetch profile data
-const fetchProfile = async () => {
+// Fetch user profile
+const fetchUser = async (username: string) => {
     loading.value = true
     errorMessage.value = ''
 
     try {
-        const response = await fetch('/api/profile', {
-            credentials: 'include'
-        })
+        const response = await fetch(`/api/users/${encodeURIComponent(username)}`)
 
         if (!response.ok) {
-            if (response.status === 401) {
-                errorMessage.value = 'Please log in to view your profile'
-                setTimeout(() => {
-                    router.push('/login')
-                }, 2000)
+            if (response.status === 404) {
+                errorMessage.value = 'User not found'
                 return
             }
-            throw new Error('Failed to load profile')
+            throw new Error('Failed to load user profile')
         }
 
         const data = await response.json()
@@ -64,8 +62,8 @@ const fetchProfile = async () => {
         allFavorites.value = data.user.favorites
         allWatchlist.value = data.user.watchlist
     } catch (error) {
-        console.error('Failed to fetch profile:', error)
-        errorMessage.value = error instanceof Error ? error.message : 'Failed to load profile. Please try again.'
+        console.error('Failed to fetch user profile:', error)
+        errorMessage.value = error instanceof Error ? error.message : 'Failed to load user profile'
     } finally {
         loading.value = false
     }
@@ -73,14 +71,12 @@ const fetchProfile = async () => {
 
 // Load more functions for each tab
 const loadMoreReviews = async () => {
-    if (!pagination.value?.reviews.hasMore) return
+    if (!pagination.value?.reviews.hasMore || !user.value) return
     loadingMore.value.reviews = true
 
     try {
         const nextPage = pagination.value.reviews.page + 1
-        const response = await fetch(`/api/profile?reviewsPage=${nextPage}&tab=reviews`, {
-            credentials: 'include'
-        })
+        const response = await fetch(`/api/users/${encodeURIComponent(user.value.username)}?reviewsPage=${nextPage}&tab=reviews`)
 
         if (!response.ok) throw new Error('Failed to load more reviews')
 
@@ -98,14 +94,12 @@ const loadMoreReviews = async () => {
 }
 
 const loadMoreFavorites = async () => {
-    if (!pagination.value?.favorites.hasMore) return
+    if (!pagination.value?.favorites.hasMore || !user.value) return
     loadingMore.value.favorites = true
 
     try {
         const nextPage = pagination.value.favorites.page + 1
-        const response = await fetch(`/api/profile?favoritesPage=${nextPage}&tab=favorites`, {
-            credentials: 'include'
-        })
+        const response = await fetch(`/api/users/${encodeURIComponent(user.value.username)}?favoritesPage=${nextPage}&tab=favorites`)
 
         if (!response.ok) throw new Error('Failed to load more favorites')
 
@@ -123,14 +117,12 @@ const loadMoreFavorites = async () => {
 }
 
 const loadMoreWatchlist = async () => {
-    if (!pagination.value?.watchlist.hasMore) return
+    if (!pagination.value?.watchlist.hasMore || !user.value) return
     loadingMore.value.watchlist = true
 
     try {
         const nextPage = pagination.value.watchlist.page + 1
-        const response = await fetch(`/api/profile?watchlistPage=${nextPage}&tab=watchlist`, {
-            credentials: 'include'
-        })
+        const response = await fetch(`/api/users/${encodeURIComponent(user.value.username)}?watchlistPage=${nextPage}&tab=watchlist`)
 
         if (!response.ok) throw new Error('Failed to load more watchlist items')
 
@@ -147,30 +139,21 @@ const loadMoreWatchlist = async () => {
     }
 }
 
-// Handle username update from dialog
-const handleUsernameUpdated = (newUsername: string) => {
-    if (user.value) {
-        user.value.username = newUsername
-    }
-    successMessage.value = 'Username updated successfully!'
-    setTimeout(() => {
-        successMessage.value = ''
-    }, 3000)
-}
-
-// Logout
-const handleLogout = async () => {
-    try {
-        await authStore.logout()
-        router.push('/login')
-    } catch (error) {
-        console.error('Logout failed:', error)
-        errorMessage.value = 'Failed to logout'
-    }
-}
-
 onMounted(() => {
-    fetchProfile()
+    const username = route.params.username as string
+    if (username) {
+        fetchUser(username)
+    } else {
+        errorMessage.value = 'No username provided'
+        loading.value = false
+    }
+})
+
+// Watch for username changes
+watch(() => route.params.username, (newUsername) => {
+    if (newUsername && typeof newUsername === 'string') {
+        fetchUser(newUsername)
+    }
 })
 </script>
 
@@ -180,43 +163,33 @@ onMounted(() => {
 
             <!-- Header -->
             <div class="flex items-center justify-between mb-6">
-                <Button icon="pi pi-arrow-left" label="Back to Home" text @click="router.push('/')" />
+                <Button icon="pi pi-arrow-left" label="Back" text @click="router.back()" />
                 <h1 class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">
-                    My Profile
+                    User Profile
                 </h1>
-                <div class="w-32"></div>
+                <div class="w-24"></div>
             </div>
 
-            <!-- Messages -->
-            <Message v-if="successMessage" severity="success" :closable="true" @close="successMessage = ''"
-                class="mb-4">
-                {{ successMessage }}
-            </Message>
-
-            <Message v-if="errorMessage" severity="error" :closable="true" @close="errorMessage = ''" class="mb-4">
+            <!-- Error Message -->
+            <Message v-if="errorMessage" severity="error" :closable="false" class="mb-4">
                 {{ errorMessage }}
             </Message>
 
             <!-- Loading State -->
             <ProfileSkeleton v-if="loading" />
 
-            <!-- Profile Content -->
+            <!-- User Profile Content -->
             <div v-else-if="user" class="space-y-6">
 
                 <!-- Profile Header Card -->
-                <ProfileHeader :username="user.username" :email="user.email" :created-at="user.createdAt" :stats="stats"
-                    :is-own-profile="true" @edit="showEditDialog = true" @logout="handleLogout" />
+                <ProfileHeader :username="user.username" :created-at="user.createdAt" :stats="stats" />
 
                 <!-- Tabs -->
                 <ProfileTabs :reviews="allReviews" :favorites="allFavorites" :watchlist="allWatchlist" :stats="stats"
-                    :pagination="pagination" :loading-more="loadingMore" :is-own-profile="true"
-                    @load-more-reviews="loadMoreReviews" @load-more-favorites="loadMoreFavorites"
-                    @load-more-watchlist="loadMoreWatchlist" />
+                    :pagination="pagination" :loading-more="loadingMore" @load-more-reviews="loadMoreReviews"
+                    @load-more-favorites="loadMoreFavorites" @load-more-watchlist="loadMoreWatchlist" />
             </div>
 
-            <!-- Edit Username Dialog -->
-            <EditUsernameDialog v-model:visible="showEditDialog" :current-username="user?.username ?? ''"
-                @updated="handleUsernameUpdated" />
         </div>
     </div>
 </template>

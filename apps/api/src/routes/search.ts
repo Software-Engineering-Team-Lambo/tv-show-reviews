@@ -21,9 +21,22 @@ const SearchBodySchema = Type.Object({
       Type.Literal("title"),
     ])
   ),
+  page: Type.Optional(Type.Number({ minimum: 1, default: 1 })),
+  limit: Type.Optional(Type.Number({ minimum: 1, maximum: 50, default: 20 })),
 });
 
 type SearchBody = Static<typeof SearchBodySchema>;
+
+interface SearchResponse {
+  results: SearchResult[];
+  pagination: {
+    page: number;
+    limit: number;
+    totalCount: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
+}
 
 const search: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
   // POST /api/search - Search shows with filters and sorting
@@ -35,7 +48,14 @@ const search: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
       },
     },
     async function (request, reply) {
-      const { query, genres, year, sortBy = "rating" } = request.body;
+      const {
+        query,
+        genres,
+        year,
+        sortBy = "rating",
+        page = 1,
+        limit = 20,
+      } = request.body;
 
       // Build the where clause with proper typing
       const whereClause: ShowWhereInput = {};
@@ -117,6 +137,16 @@ const search: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
         }
       })();
 
+      // Get total count for pagination
+      const totalCount = await fastify.prisma.show.count({
+        where: whereClause,
+      });
+
+      // Calculate pagination values
+      const skip = (page - 1) * limit;
+      const totalPages = Math.ceil(totalCount / limit);
+      const hasMore = page < totalPages;
+
       // Run both queries in parallel for better performance
       const [results, ratingAggregates] = await Promise.all([
         // Fetch results with genres and aggregated review data
@@ -135,6 +165,8 @@ const search: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
             },
           },
           orderBy,
+          skip,
+          take: limit,
         }),
         // Get average ratings for all matching shows in parallel
         fastify.prisma.review.groupBy({
@@ -176,7 +208,18 @@ const search: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
         transformedResults.sort((a, b) => b.rating - a.rating);
       }
 
-      reply.send(transformedResults);
+      const response: SearchResponse = {
+        results: transformedResults,
+        pagination: {
+          page,
+          limit,
+          totalCount,
+          totalPages,
+          hasMore,
+        },
+      };
+
+      reply.send(response);
     }
   );
 

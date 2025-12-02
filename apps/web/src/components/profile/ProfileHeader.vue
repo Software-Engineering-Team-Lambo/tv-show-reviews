@@ -1,13 +1,21 @@
 <script setup lang="ts">
-import type { UserProfile, ProfileStats } from '@/types/api'
+import type { ProfileStats } from '@/types/api'
 import Card from 'primevue/card'
 import Button from 'primevue/button'
 import Avatar from 'primevue/avatar'
 
-defineProps<{
-    user: UserProfile
+interface Props {
+    username: string
+    email?: string | null
+    createdAt: string
     stats: ProfileStats
-}>()
+    isOwnProfile?: boolean
+}
+
+const props = withDefaults(defineProps<Props>(), {
+    email: null,
+    isOwnProfile: false,
+})
 
 const emit = defineEmits<{
     edit: []
@@ -19,7 +27,7 @@ const formatDate = (dateString: string) => {
     return date.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
-        day: 'numeric'
+        day: props.isOwnProfile ? 'numeric' : undefined
     })
 }
 
@@ -33,7 +41,7 @@ const getInitials = (username: string) => {
         <template #content>
             <div class="flex flex-col md:flex-row gap-6 items-start">
                 <!-- Avatar -->
-                <Avatar :label="getInitials(user.username)" size="xlarge" shape="circle"
+                <Avatar :label="getInitials(username)" size="xlarge" shape="circle"
                     class="bg-indigo-600 text-white text-4xl" style="width: 120px; height: 120px; font-size: 2.5rem;" />
 
                 <!-- User Info -->
@@ -41,17 +49,18 @@ const getInitials = (username: string) => {
                     <div class="flex flex-col md:flex-row md:items-start justify-between mb-4">
                         <div>
                             <h2 class="text-3xl font-bold text-gray-800 dark:text-white mb-1">
-                                {{ user.username }}
+                                {{ username }}
                             </h2>
-                            <p class="text-gray-600 dark:text-gray-400 mb-2">
-                                {{ user.email }}
+                            <p v-if="email" class="text-gray-600 dark:text-gray-400 mb-2">
+                                {{ email }}
                             </p>
                             <p class="text-sm text-gray-500 dark:text-gray-500">
-                                Member since {{ formatDate(user.createdAt) }}
+                                <i class="pi pi-calendar mr-2"></i>
+                                Member since {{ formatDate(createdAt) }}
                             </p>
                         </div>
 
-                        <div class="flex gap-2 mt-4 md:mt-0">
+                        <div v-if="isOwnProfile" class="flex gap-2 mt-4 md:mt-0">
                             <Button label="Edit Profile" icon="pi pi-pencil" outlined @click="emit('edit')"
                                 size="small" />
                             <Button label="Logout" icon="pi pi-sign-out" severity="danger" outlined
