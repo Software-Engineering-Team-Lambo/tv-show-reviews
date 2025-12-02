@@ -58,9 +58,11 @@ const handleForgotPassword = (email: string) => {
         <div class="w-full max-w-md">
             <!-- Logo/Brand -->
             <div class="text-center mb-8">
-                <h1 class="text-5xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
-                    🛋️ Couch Critics
-                </h1>
+                <router-link to="/" class="inline-block hover:opacity-80 transition-opacity">
+                    <h1 class="text-5xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
+                        🛋️ Couch Critics
+                    </h1>
+                </router-link>
                 <p class="text-gray-600 dark:text-gray-400">Your TV Show Review Community</p>
             </div>
 
