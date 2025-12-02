@@ -1,30 +1,22 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import Button from 'primevue/button'
 import InputText from 'primevue/inputtext'
 import Avatar from 'primevue/avatar'
 import Menu from 'primevue/menu'
+import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
+const authStore = useAuthStore()
 const searchQuery = ref('')
 const userMenu = ref()
 
-const userMenuItems = ref([
+const userMenuItems = computed(() => [
     {
         label: 'My Profile',
         icon: 'pi pi-user',
         command: () => router.push('/profile'),
-    },
-    {
-        label: 'My Reviews',
-        icon: 'pi pi-star',
-        command: () => console.log('TODO: Navigate to my reviews'),
-    },
-    {
-        label: 'Settings',
-        icon: 'pi pi-cog',
-        command: () => console.log('TODO: Navigate to settings'),
     },
     {
         separator: true,
@@ -32,12 +24,16 @@ const userMenuItems = ref([
     {
         label: 'Logout',
         icon: 'pi pi-sign-out',
-        command: () => {
-            console.log('TODO: Implement logout')
+        command: async () => {
+            await authStore.logout()
             router.push('/login')
         },
     },
 ])
+
+const userInitial = computed(() =>
+    authStore.user?.username?.charAt(0).toUpperCase() || 'U'
+)
 
 const toggleUserMenu = (event: Event) => {
     userMenu.value.toggle(event)
@@ -77,13 +73,16 @@ const handleSearch = () => {
 
                 <!-- User Menu -->
                 <div class="flex items-center gap-2">
-                    <Button icon="pi pi-bell" text rounded severity="secondary" badge="3" badgeClass="bg-red-500"
-                        @click="() => console.log('TODO: Show notifications')" />
+                    <template v-if="authStore.isAuthenticated">
 
-                    <Avatar label="U" shape="circle" class="cursor-pointer bg-indigo-600 text-white"
-                        @click="toggleUserMenu" />
+                        <Avatar :label="userInitial" shape="circle" class="cursor-pointer bg-indigo-600 text-white"
+                            @click="toggleUserMenu" />
 
-                    <Menu ref="userMenu" :model="userMenuItems" popup />
+                        <Menu ref="userMenu" :model="userMenuItems" popup />
+                    </template>
+                    <template v-else>
+                        <Button label="Login" icon="pi pi-sign-in" @click="router.push('/login')" />
+                    </template>
                 </div>
             </div>
         </div>
