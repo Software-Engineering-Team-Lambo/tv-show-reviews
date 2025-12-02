@@ -57,7 +57,7 @@ const fetchProfile = async () => {
         }
 
         const data = await response.json()
-        user.value = data.user
+        Object.assign(user.value, data.user)
 
     } catch (error: any) {
         console.error('Failed to fetch profile:', error)
@@ -150,7 +150,7 @@ const handleUpdateUsername = async () => {
         }
 
         const data = await response.json()
-        user.value.username = data.user.username
+        Object.assign(user.value, data.user)
         successMessage.value = 'Username updated successfully!'
         showEditDialog.value = false
 
@@ -181,7 +181,7 @@ const handleLogout = async () => {
 // Get poster image URL (TMDB)
 const getPosterUrl = (posterPath: string | null) => {
     if (!posterPath) return 'https://via.placeholder.com/300x450?text=No+Image'
-    return `https://image.tmdb.org/t/p/w500${posterPath}`
+    return `/show_images/${posterPath}`
 }
 
 onMounted(() => {

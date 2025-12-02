@@ -71,7 +71,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     const data = await response.json()
-    user.value = data.user
+    Object.assign(user.data, data.user)
     return data
   }
 

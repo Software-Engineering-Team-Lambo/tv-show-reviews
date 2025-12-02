@@ -52,17 +52,17 @@ const profile: FastifyPluginAsync = async (fastify) => {
         });
       }
 
-      // Add stats counts
-      const profileData = {
-        ...user,
-        stats: {
-          reviewsCount: user.reviews.length,
-          favoritesCount: user.favorites.length,
-          watchlistCount: user.watchlist.length,
-        },
+      const sanitizedUser = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        createdAt: user.createdAt,
+        reviews: user.reviews,
+        favorites: user.favorites,
+        watchlist: user.watchlist,
       };
 
-      return reply.send({ user: profileData });
+      return reply.send({ user: sanitizedUser });
     } catch (error) {
       // Not authenticated or invalid generateToken
       return reply.status(401).send({
