@@ -4,7 +4,12 @@ import { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import app from "./app.js";
 
 async function start() {
-  const server = Fastify({ logger: true });
+  const server = Fastify({
+    logger: true,
+    // Trust proxy headers (X-Forwarded-*) from Caddy reverse proxy in production
+    // This ensures correct client IP logging and protocol detection
+    trustProxy: process.env.NODE_ENV === "production",
+  });
   server.withTypeProvider<TypeBoxTypeProvider>();
 
   // Register the application plugin (from app.ts)

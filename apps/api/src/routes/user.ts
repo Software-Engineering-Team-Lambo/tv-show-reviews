@@ -3,26 +3,14 @@ import { Static, Type } from "@sinclair/typebox";
 import { Prisma } from "../../generated/prisma";
 import {
   ProfileTab,
-  ProfileUser,
-  ProfileResponse,
+  PublicProfileUser,
+  PublicProfileResponse,
   ReviewWithShow,
   FavoriteWithShow,
   WatchlistWithShow,
   createPaginationInfo,
+  toPublicWatchlist,
 } from "../types/types-profile";
-
-// Define the profile update request schema
-const UpdateUsernameSchema = Type.Object({
-  username: Type.String({
-    minLength: 4,
-    maxLength: 16,
-    pattern: "^[a-zA-Z0-9_]+$",
-    description:
-      "Username must be 4-16 characters and contain only letters, numbers, and underscores",
-  }),
-});
-
-type UpdateUsernameBody = Static<typeof UpdateUsernameSchema>;
 
 // Pagination query schema
 const PaginationQuerySchema = Type.Object({
@@ -31,7 +19,6 @@ const PaginationQuerySchema = Type.Object({
   watchlistPage: Type.Optional(Type.Number({ minimum: 1, default: 1 })),
   limit: Type.Optional(Type.Number({ minimum: 1, maximum: 50, default: 10 })),
   // Optional: specify which tab to load (for "load more" requests)
-  // If not specified, loads all tabs (initial load)
   tab: Type.Optional(
     Type.Union([
       Type.Literal("reviews"),
@@ -43,28 +30,25 @@ const PaginationQuerySchema = Type.Object({
 
 type PaginationQuery = Static<typeof PaginationQuerySchema>;
 
-const profile: FastifyPluginAsync = async (fastify) => {
-  fastify.get<{ Querystring: PaginationQuery }>(
-    "/api/profile",
+// Route params schema
+const UserParamsSchema = Type.Object({
+  username: Type.String(),
+});
+
+type UserParams = Static<typeof UserParamsSchema>;
+
+const user: FastifyPluginAsync = async (fastify) => {
+  // GET /api/users/:username - Get public user profile
+  fastify.get<{ Params: UserParams; Querystring: PaginationQuery }>(
+    "/api/users/:username",
     {
       schema: {
+        params: UserParamsSchema,
         querystring: PaginationQuerySchema,
       },
     },
     async (request, reply) => {
-      // Verify JWT from cookie
-      try {
-        await request.jwtVerify();
-      } catch (error) {
-        console.log(error);
-        return reply.status(401).send({ error: "Not authenticated" });
-      }
-
-      const userId = request.user.userId;
-      if (!userId) {
-        return reply.status(401).send({ error: "User ID Not Authenticated" });
-      }
-
+      const { username } = request.params;
       const {
         reviewsPage = 1,
         favoritesPage = 1,
@@ -72,6 +56,18 @@ const profile: FastifyPluginAsync = async (fastify) => {
         limit = 10,
         tab,
       } = request.query;
+
+      // Find the user by username first
+      const userBasic = await fastify.prisma.user.findUnique({
+        where: { username },
+        select: { id: true },
+      });
+
+      if (!userBasic) {
+        return reply.status(404).send({ error: "User not found" });
+      }
+
+      const userId = userBasic.id;
 
       // Determine which data to fetch based on tab parameter
       const fetchReviews = !tab || tab === "reviews";
@@ -82,8 +78,8 @@ const profile: FastifyPluginAsync = async (fastify) => {
       const select: Prisma.UserSelect = {
         id: true,
         username: true,
-        email: true,
         createdAt: true,
+        // Note: don't include email for public profiles
         ...(fetchReviews && {
           reviews: {
             include: { show: true },
@@ -111,7 +107,7 @@ const profile: FastifyPluginAsync = async (fastify) => {
       };
 
       // Get counts and user data in parallel
-      const [reviewsCount, favoritesCount, watchlistCount, user] =
+      const [reviewsCount, favoritesCount, watchlistCount, userData] =
         await Promise.all([
           fetchReviews
             ? fastify.prisma.review.count({ where: { userId } })
@@ -125,7 +121,7 @@ const profile: FastifyPluginAsync = async (fastify) => {
           fastify.prisma.user.findUnique({ where: { id: userId }, select }),
         ]);
 
-      if (!user) {
+      if (!userData) {
         return reply.status(404).send({ error: "User not found" });
       }
 
@@ -155,82 +151,22 @@ const profile: FastifyPluginAsync = async (fastify) => {
         );
       }
 
-      // Build typed response
-      const profileUser: ProfileUser = {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        createdAt: user.createdAt,
-        reviews: (user.reviews as ReviewWithShow[] | undefined) ?? [],
-        favorites: (user.favorites as FavoriteWithShow[] | undefined) ?? [],
-        watchlist: (user.watchlist as WatchlistWithShow[] | undefined) ?? [],
+      // Build typed response (hide private watchlist notes)
+      const publicUser: PublicProfileUser = {
+        id: userData.id,
+        username: userData.username,
+        createdAt: userData.createdAt,
+        reviews: (userData.reviews as ReviewWithShow[] | undefined) ?? [],
+        favorites: (userData.favorites as FavoriteWithShow[] | undefined) ?? [],
+        watchlist: toPublicWatchlist(
+          userData.watchlist as WatchlistWithShow[] | undefined
+        ),
       };
 
-      const response: ProfileResponse = { user: profileUser, pagination };
+      const response: PublicProfileResponse = { user: publicUser, pagination };
       return reply.send(response);
-    }
-  );
-
-  fastify.put<{ Body: UpdateUsernameBody }>(
-    "/api/profile",
-    { schema: { body: UpdateUsernameSchema } },
-    async (request, reply) => {
-      // Verify JWT from cookie
-      try {
-        await request.jwtVerify();
-      } catch (error) {
-        console.error("Profile update auth error:", error);
-        return reply.status(401).send({
-          error: "Not authenticated",
-        });
-      }
-
-      const userId = request.user.userId;
-      if (!userId) {
-        return reply.status(401).send({
-          error: "User ID Not Authenticated",
-        });
-      }
-
-      const { username } = request.body;
-
-      const currentUser = await fastify.prisma.user.findUnique({
-        where: { id: userId },
-        select: { username: true },
-      });
-
-      if (currentUser?.username === username) {
-        return reply.status(400).send({
-          error: "New username must be different from the current username",
-        });
-      }
-
-      // make sure the new username is not already taken
-      const existingUsername = await fastify.prisma.user.findUnique({
-        where: { username },
-      });
-
-      if (existingUsername && existingUsername.id !== userId) {
-        return reply.status(400).send({
-          error: "Username is already taken",
-        });
-      }
-
-      // update username
-      const updatedUser = await fastify.prisma.user.update({
-        where: { id: userId },
-        data: { username },
-        select: {
-          id: true,
-          username: true,
-          email: true,
-          createdAt: true,
-        },
-      });
-
-      return reply.send({ user: updatedUser });
     }
   );
 };
 
-export default profile;
+export default user;
