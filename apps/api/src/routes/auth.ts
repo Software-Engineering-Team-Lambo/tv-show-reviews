@@ -27,6 +27,7 @@ const auth: FastifyPluginAsync = async (fastify) => {
       return reply.send({ user });
     } catch (error) {
       // Not authenticated or invalid token
+      console.log(error);
       return reply.status(401).send({
         error: "Not authenticated",
       });
