@@ -74,8 +74,6 @@ const handleSearch = () => {
                 <!-- User Menu -->
                 <div class="flex items-center gap-2">
                     <template v-if="authStore.isAuthenticated">
-                        <Button icon="pi pi-bell" text rounded severity="secondary" badge="3" badgeClass="bg-red-500"
-                            @click="() => console.log('TODO: Show notifications')" />
 
                         <Avatar :label="userInitial" shape="circle" class="cursor-pointer bg-indigo-600 text-white"
                             @click="toggleUserMenu" />

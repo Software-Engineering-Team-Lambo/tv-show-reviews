@@ -9,6 +9,8 @@ import {
   setupImagesDirectory,
   downloadShowPoster,
 } from "./lib/image-downloader.js";
+import crypto from "crypto";
+import argon2 from "argon2";
 
 const prisma = new PrismaClient();
 
@@ -30,24 +32,70 @@ const prisma = new PrismaClient();
  */
 async function createSampleUsers() {
   console.log("Creating sample users...");
-  const user1 = await prisma.user.create({
-    data: {
-      email: "alice@example.com",
-      username: "Alice",
-      password_hash: "hashed_password_placeholder",
-    },
-  });
 
-  const user2 = await prisma.user.create({
-    data: {
-      email: "bob@example.com",
-      username: "Bob",
-      password_hash: "hashed_password_placeholder",
-    },
-  });
+  const firstNames = [
+    "Alice",
+    "Bob",
+    "Charlie",
+    "Diana",
+    "Edward",
+    "Fiona",
+    "George",
+    "Hannah",
+    "Ivan",
+    "Julia",
+  ];
+  const lastNames = [
+    "Smith",
+    "Johnson",
+    "Williams",
+    "Brown",
+    "Jones",
+    "Garcia",
+    "Miller",
+    "Davis",
+    "Rodriguez",
+    "Martinez",
+  ];
+  const domains = [
+    "gmail.com",
+    "yahoo.com",
+    "hotmail.com",
+    "outlook.com",
+    "email.com",
+  ];
 
-  console.log(`✅ Created 2 users`);
-  return { user1, user2 };
+  const users = [];
+
+  for (let i = 0; i < 10; i++) {
+    const firstName = firstNames[i];
+    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+    const domain = domains[Math.floor(Math.random() * domains.length)];
+    const randomNum = Math.floor(Math.random() * 1000);
+
+    const email = `${firstName.toLowerCase()}.${lastName.toLowerCase()}${randomNum}@${domain}`;
+    const username = `${firstName}${lastName.substring(0, 1)}${randomNum}`;
+    const password = crypto.randomBytes(12).toString("hex");
+    const password_hash = await argon2.hash(password, {
+      type: argon2.argon2id,
+      memoryCost: 65536,
+      timeCost: 3,
+      parallelism: 1,
+    });
+
+    const user = await prisma.user.create({
+      data: {
+        email,
+        username,
+        password_hash: password_hash,
+      },
+    });
+
+    users.push({ ...user, plainPassword: password });
+  }
+
+  console.log(`✅ Created ${users.length} users`);
+  return users;
 }
 
 /**
@@ -243,49 +291,184 @@ async function enrichShowDetails(
  * Create sample reviews
  */
 async function createSampleReviews(
-  user1Id: number,
-  user2Id: number
+  users: Array<{ id: number; username: string }>
 ): Promise<void> {
   console.log("Creating sample reviews...");
-  const allShows = await prisma.show.findMany({ take: 3 });
+  const allShows = await prisma.show.findMany();
 
-  if (allShows.length > 0) {
-    await prisma.review.create({
-      data: {
-        rating: 10,
-        comment:
-          "One of the best TV shows ever made. Walter White's transformation is incredible!",
-        userId: user1Id,
-        showId: allShows[0].id,
-      },
-    });
+  if (allShows.length === 0) {
+    console.log("No shows found, skipping reviews.");
+    return;
   }
 
-  if (allShows.length > 1) {
-    await prisma.review.create({
-      data: {
-        rating: 9,
-        comment:
-          "Hilarious and relatable. Michael Scott is an iconic character.",
-        userId: user2Id,
-        showId: allShows[1].id,
-      },
-    });
+  const comments = [
+    "Absolutely brilliant! One of the best shows I've ever watched.",
+    "Great acting and compelling storyline. Highly recommended!",
+    "A bit slow at times, but overall a solid show.",
+    "Incredible character development throughout the series.",
+    "The plot twists kept me on the edge of my seat!",
+    "Not my favorite, but I can see why people like it.",
+    "Binged the entire season in one weekend. No regrets!",
+    "The cinematography is stunning. Every frame is art.",
+    "Started strong but lost steam in later seasons.",
+    "A masterpiece of modern television.",
+    "Funny, heartwarming, and endlessly rewatchable.",
+    "The writing is top-notch. Every episode delivers.",
+    "Good show, but overhyped in my opinion.",
+    "Perfect blend of drama and comedy.",
+    "One of those rare shows that gets better with each season.",
+  ];
+
+  let reviewCount = 0;
+
+  for (const user of users) {
+    // Each user reviews 3-8 random shows
+    const numReviews = Math.floor(Math.random() * 6) + 3;
+    const shuffledShows = [...allShows].sort(() => Math.random() - 0.5);
+    const showsToReview = shuffledShows.slice(0, numReviews);
+
+    for (const show of showsToReview) {
+      const rating = Math.floor(Math.random() * 5) + 6; // Rating between 6-10
+      const comment = comments[Math.floor(Math.random() * comments.length)];
+
+      await prisma.review.create({
+        data: {
+          rating,
+          comment,
+          userId: user.id,
+          showId: show.id,
+        },
+      });
+      reviewCount++;
+    }
   }
 
-  if (allShows.length > 2) {
-    await prisma.review.create({
-      data: {
-        rating: 8,
-        comment:
-          "Great sci-fi mystery with a perfect 80s vibe. Highly recommended!",
-        userId: user1Id,
-        showId: allShows[2].id,
-      },
-    });
+  console.log(`✅ Created ${reviewCount} reviews`);
+}
+
+/**
+ * Create sample favorites
+ */
+async function createSampleFavorites(
+  users: Array<{ id: number; username: string }>
+): Promise<void> {
+  console.log("Creating sample favorites...");
+  const allShows = await prisma.show.findMany();
+
+  if (allShows.length === 0) {
+    console.log("No shows found, skipping favorites.");
+    return;
   }
 
-  console.log(`✅ Created ${Math.min(3, allShows.length)} reviews`);
+  let favoriteCount = 0;
+
+  for (const user of users) {
+    // Each user has 2-5 favorites
+    const numFavorites = Math.floor(Math.random() * 4) + 2;
+    const shuffledShows = [...allShows].sort(() => Math.random() - 0.5);
+    const favoriteShows = shuffledShows.slice(0, numFavorites);
+
+    for (const show of favoriteShows) {
+      await prisma.favorite.create({
+        data: {
+          userId: user.id,
+          showId: show.id,
+        },
+      });
+      favoriteCount++;
+    }
+  }
+
+  console.log(`✅ Created ${favoriteCount} favorites`);
+}
+
+/**
+ * Create sample watchlist items
+ */
+async function createSampleWatchlist(
+  users: Array<{ id: number; username: string }>
+): Promise<void> {
+  console.log("Creating sample watchlist items...");
+  const allShows = await prisma.show.findMany();
+
+  if (allShows.length === 0) {
+    console.log("No shows found, skipping watchlist.");
+    return;
+  }
+
+  const notes = [
+    "Recommended by a friend",
+    "Looks interesting!",
+    "Need to finish this one",
+    "For the weekend binge",
+    "Everyone's talking about this",
+    null,
+    null,
+    "High priority",
+    null,
+    "Watch with family",
+  ];
+
+  let watchlistCount = 0;
+
+  for (const user of users) {
+    // Each user has 3-7 watchlist items
+    const numWatchlist = Math.floor(Math.random() * 5) + 3;
+    const shuffledShows = [...allShows].sort(() => Math.random() - 0.5);
+    const watchlistShows = shuffledShows.slice(0, numWatchlist);
+
+    for (const show of watchlistShows) {
+      const note = notes[Math.floor(Math.random() * notes.length)];
+
+      await prisma.watchlist.create({
+        data: {
+          userId: user.id,
+          showId: show.id,
+          note,
+        },
+      });
+      watchlistCount++;
+    }
+  }
+
+  console.log(`✅ Created ${watchlistCount} watchlist items`);
+}
+
+/**
+ * Print user summary
+ */
+async function printUserSummary(
+  users: Array<{
+    id: number;
+    username: string;
+    email: string;
+    plainPassword: string;
+  }>
+): Promise<void> {
+  console.log("\n" + "=".repeat(80));
+  console.log("📋 USER SUMMARY");
+  console.log("=".repeat(80));
+
+  for (const user of users) {
+    const reviewCount = await prisma.review.count({
+      where: { userId: user.id },
+    });
+    const favoriteCount = await prisma.favorite.count({
+      where: { userId: user.id },
+    });
+    const watchlistCount = await prisma.watchlist.count({
+      where: { userId: user.id },
+    });
+
+    console.log(`\n👤 ${user.username}`);
+    console.log(`   Email: ${user.email}`);
+    console.log(`   Password: ${user.plainPassword}`);
+    console.log(
+      `   Reviews: ${reviewCount} | Favorites: ${favoriteCount} | Watchlist: ${watchlistCount}`
+    );
+  }
+
+  console.log("\n" + "=".repeat(80));
 }
 
 /**
@@ -318,7 +501,7 @@ async function main() {
     setupImagesDirectory();
 
     // Create sample users
-    const { user1, user2 } = await createSampleUsers();
+    const users = await createSampleUsers();
 
     // Fetch and save shows
     await fetchAndSaveShows(apiKey, 5);
@@ -326,8 +509,13 @@ async function main() {
     // Enrich shows with details and download images
     await enrichShowDetails(apiKey, imageBaseUrl);
 
-    // Create sample reviews
-    await createSampleReviews(user1.id, user2.id);
+    // Create sample reviews, favorites, and watchlist
+    await createSampleReviews(users);
+    await createSampleFavorites(users);
+    await createSampleWatchlist(users);
+
+    // Print user summary
+    await printUserSummary(users);
 
     console.log("🎉 Seed completed successfully!");
   } catch (err) {
