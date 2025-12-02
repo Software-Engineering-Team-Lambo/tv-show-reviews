@@ -19,16 +19,6 @@ const userMenuItems = computed(() => [
         command: () => router.push('/profile'),
     },
     {
-        label: 'My Reviews',
-        icon: 'pi pi-star',
-        command: () => console.log('TODO: Navigate to my reviews'),
-    },
-    {
-        label: 'Settings',
-        icon: 'pi pi-cog',
-        command: () => console.log('TODO: Navigate to settings'),
-    },
-    {
         separator: true,
     },
     {
