@@ -328,7 +328,7 @@ async function createSampleReviews(
     const showsToReview = shuffledShows.slice(0, numReviews);
 
     for (const show of showsToReview) {
-      const rating = Math.floor(Math.random() * 5) + 6; // Rating between 6-10
+      const rating = Math.floor(Math.random() * 3) + 3; // Rating between 3-5
       const comment = comments[Math.floor(Math.random() * comments.length)];
 
       await prisma.review.create({
