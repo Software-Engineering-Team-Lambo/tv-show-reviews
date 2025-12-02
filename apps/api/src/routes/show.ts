@@ -76,7 +76,7 @@ const showRoute: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
         reviews: show.reviews.map((r) => ({
           id: r.id,
           userId: r.userId,
-          username: r.user?.name ?? `user_${r.userId}`,
+          username: r.user?.username ?? `user_${r.userId}`,
           rating: r.rating,
           comment: r.comment ?? null,
           reviewText: r.comment ?? null,

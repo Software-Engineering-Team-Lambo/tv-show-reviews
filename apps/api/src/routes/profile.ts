@@ -1,348 +1,136 @@
-// pull user data from login to display on profile page
-import type { FastifyPluginAsync, FastifyRequest } from "fastify";
+import { FastifyPluginAsync } from "fastify";
+import { Static, Type } from "@sinclair/typebox";
 
-type AuthUser = { id?: number | string; username?: string; email?: string };
+// Define the profile update request schema
+const UpdateUsernameSchema = Type.Object({
+  username: Type.String({
+    minLength: 4,
+    maxLength: 16,
+    pattern: "^[a-zA-Z0-9_]+$",
+    description:
+      "Username must be 4-16 characters and contain only letters, numbers, and underscores",
+  }),
+});
 
-const profile: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
-  // GET /api/profile
-  // - If caller provides `X-User-Id` header or `?id=` query param, try to load that user from Prisma
-  // - Otherwise return a demo/mock user object to support frontend development
+type UpdateUsernameBody = Static<typeof UpdateUsernameSchema>;
+
+const profile: FastifyPluginAsync = async (fastify) => {
   fastify.get("/api/profile", async (request, reply) => {
-    // If the authentication plugin sets `request.user`, prefer that
-    const req = request as FastifyRequest & {
-      user?: AuthUser;
-      query?: Record<string, unknown>;
-    };
-    const authUser = req.user;
-    if (authUser) {
-      // When an authenticated identity exists, load the canonical profile
-      // from the database and include favorites/watchlist (with show data)
-      // so the frontend receives full lists.
-      let userFromAuth: unknown = null;
-      if (authUser.username) {
-        userFromAuth = await fastify.prisma.user.findFirst({
-          where: { name: String(authUser.username) },
-          include: {
-            reviews: {
-              include: { show: true },
-              orderBy: { createdAt: "desc" },
-            },
-            favorites: { include: { show: true } },
-            watchlist: { include: { show: true } },
-          },
-        });
-      }
-      if (!userFromAuth && authUser.id) {
-        userFromAuth = await fastify.prisma.user.findUnique({
-          where: { id: Number(authUser.id) },
-          include: {
-            reviews: {
-              include: { show: true },
-              orderBy: { createdAt: "desc" },
-            },
-            favorites: { include: { show: true } },
-            watchlist: { include: { show: true } },
-          },
-        });
-      }
-      if (!userFromAuth && authUser.email) {
-        userFromAuth = await fastify.prisma.user.findUnique({
-          where: { email: String(authUser.email) },
-          include: {
-            reviews: {
-              include: { show: true },
-              orderBy: { createdAt: "desc" },
-            },
-            favorites: { include: { show: true } },
-            watchlist: { include: { show: true } },
-          },
+    try {
+      // Verify JWT from cookie
+      await request.jwtVerify();
+
+      const userId = request.user.userId;
+      if (!userId) {
+        return reply.status(401).send({
+          error: "User ID Not Authenticated",
         });
       }
 
-      if (userFromAuth) {
-        const ufa = userFromAuth as {
-          reviews?: unknown[];
-          favorites?: unknown[];
-          watchlist?: unknown[];
-          id?: number;
-          name?: string | null;
-          email?: string;
-          createdAt?: Date | string;
-        };
-
-        const reviews = (ufa.reviews || []).map((r: unknown) => {
-          const rr = r as Record<string, unknown>;
-          return {
-            id: Number(rr.id as number | string),
-            showId: Number(rr.showId as number | string),
-            showTitle: (() => {
-              const s = rr.show as Record<string, unknown> | undefined;
-              if (s) {
-                if (typeof s.title === "string") return s.title;
-                if (typeof s.name === "string") return s.name;
-              }
-              return null;
-            })(),
-            showImage: (() => {
-              const s = rr.show as Record<string, unknown> | undefined;
-              return s && typeof s.posterPath === "string"
-                ? s.posterPath
-                : null;
-            })(),
-            rating:
-              typeof rr.rating === "number"
-                ? rr.rating
-                : Number(rr.rating as string) || 0,
-            reviewText: typeof rr.comment === "string" ? rr.comment : "",
-            date:
-              rr.createdAt && typeof rr.createdAt === "string"
-                ? rr.createdAt.split("T")[0]
-                : "",
-            likes: 0,
-          };
-        });
-
-        const favorites = (ufa.favorites || []).map((f: unknown) => {
-          const ff = f as Record<string, unknown>;
-          const show = ff.show as Record<string, unknown> | undefined;
-          return {
-            id:
-              show && show.id
-                ? Number(show.id as number | string)
-                : Number(ff.showId as number | string),
-            title: show?.title ?? null,
-            image: show?.posterPath ?? null,
-            rating: null,
-          };
-        });
-
-        const watchlist = (ufa.watchlist || []).map((w: unknown) => {
-          const ww = w as Record<string, unknown>;
-          const show = ww.show as Record<string, unknown> | undefined;
-          return {
-            id:
-              show && show.id
-                ? Number(show.id as number | string)
-                : Number(ww.showId as number | string),
-            title: show?.title ?? null,
-            image: show?.posterPath ?? null,
-            rating: null,
-          };
-        });
-
-        return {
-          id: ufa.id,
-          username:
-            ufa.name ??
-            (ufa.email ? ufa.email.split("@")[0] : undefined) ??
-            undefined,
-          email: ufa.email,
-          joinDate: ufa.createdAt
-            ? typeof ufa.createdAt === "string"
-              ? ufa.createdAt.split("T")[0]
-              : (ufa.createdAt as Date).toISOString().split("T")[0]
-            : undefined,
-          bio: "",
-          stats: {
-            reviews: reviews.length,
-            favorites: favorites.length,
-            watchlist: watchlist.length,
-          },
-          reviews,
-          favorites,
-          watchlist,
-        };
-      }
-    }
-
-    // Fallbacks: X-User-Id header or ?id= query
-    const headerId = request.headers["x-user-id"] as string | undefined;
-    const queryId = req.query?.id;
-    const maybeId = headerId ?? queryId;
-    const userId = Number(maybeId);
-
-    if (Number.isInteger(userId) && userId > 0) {
+      // load in the logged in user's profile
       const user = await fastify.prisma.user.findUnique({
         where: { id: userId },
         include: {
-          reviews: { include: { show: true }, orderBy: { createdAt: "desc" } },
-          favorites: { include: { show: true } },
-          watchlist: { include: { show: true } },
+          reviews: {
+            include: { show: true },
+            orderBy: { createdAt: "desc" },
+          },
+          favorites: {
+            include: { show: true },
+            orderBy: { createdAt: "desc" },
+          },
+          watchlist: {
+            include: { show: true },
+            orderBy: { addedAt: "desc" },
+          },
         },
       });
 
       if (!user) {
-        reply.code(404);
-        return { error: "User not found" };
+        return reply.status(404).send({
+          error: "User not found",
+        });
       }
 
-      const reviews = (user.reviews || []).map((r: unknown) => {
-        const rr = r as Record<string, unknown>;
-        const show = rr.show as Record<string, unknown> | undefined;
-        return {
-          id: Number(rr.id as number | string),
-          showId: Number(rr.showId as number | string),
-          showTitle: show?.title ?? show?.name ?? null,
-          showImage: null,
-          rating:
-            typeof rr.rating === "number"
-              ? (rr.rating as number)
-              : Number(rr.rating as string) || 0,
-          reviewText:
-            typeof rr.comment === "string" ? (rr.comment as string) : "",
-          date:
-            rr.createdAt && typeof rr.createdAt === "string"
-              ? (rr.createdAt as string).split("T")[0]
-              : "",
-          likes: 0,
-        };
+      // Add stats counts
+      const profileData = {
+        ...user,
+        stats: {
+          reviewsCount: user.reviews.length,
+          favoritesCount: user.favorites.length,
+          watchlistCount: user.watchlist.length,
+        },
+      };
+
+      return reply.send({ user: profileData });
+    } catch (error) {
+      // Not authenticated or invalid generateToken
+      return reply.status(401).send({
+        error: "Not authenticated",
       });
-
-      return {
-        id: user.id,
-        username: user.name ?? user.email.split("@")[0],
-        email: user.email,
-        joinDate: user.createdAt.toISOString().split("T")[0],
-        bio: "",
-        stats: { reviews: reviews.length, favorites: 0, watchlist: 0 },
-        reviews,
-        favorites: [],
-        watchlist: [],
-      };
     }
-
-  // PUT /api/profile - update profile fields (currently supports updating username/name)
-  fastify.put("/api/profile", async (request, reply) => {
-    const req = request as FastifyRequest & {
-      user?: AuthUser;
-      query?: Record<string, unknown>;
-    };
-    const body = request.body as unknown as {
-      username?: string;
-      name?: string;
-    };
-    const authUser = req.user;
-
-    // Determine target user id: prefer authenticated identity, then X-User-Id header or ?id= query param
-    let targetId: number | undefined;
-    if (authUser && (authUser.id || authUser.username || authUser.email)) {
-      if (authUser.id) targetId = Number(authUser.id);
-    }
-
-    const headerId = request.headers["x-user-id"] as string | undefined;
-    const queryId = req.query?.id;
-    if (!targetId && (headerId || queryId)) {
-      const maybe = headerId ?? queryId;
-      const num = Number(maybe);
-      if (Number.isInteger(num) && num > 0) targetId = num;
-    }
-
-    if (!targetId) {
-      reply.code(401);
-      return { error: "No authenticated user or id provided" };
-    }
-
-    // Only supported update today: username/name
-    const newName = body.username ?? body.name;
-    if (!newName || typeof newName !== "string") {
-      reply.code(400);
-      return { error: "Missing or invalid 'username' in body" };
-    }
-
-    // Ensure user exists
-    const existing = await fastify.prisma.user.findUnique({
-      where: { id: targetId },
-    });
-    if (!existing) {
-      reply.code(404);
-      return { error: "User not found" };
-    }
-
-    // Update the name and return the same shape as GET /api/profile
-    const updated = await fastify.prisma.user.update({
-      where: { id: targetId },
-      data: { name: String(newName) },
-      include: {
-        reviews: { include: { show: true }, orderBy: { createdAt: "desc" } },
-        favorites: { include: { show: true } },
-        watchlist: { include: { show: true } },
-      },
-    });
-
-    const reviews = (updated.reviews || []).map((r: unknown) => {
-      const rr = r as Record<string, unknown>;
-      return {
-        id: Number(rr.id as number | string),
-        showId: Number(rr.showId as number | string),
-        showTitle: (() => {
-          const s = rr.show as Record<string, unknown> | undefined;
-          if (s) {
-            if (typeof s.title === "string") return s.title;
-            if (typeof s.name === "string") return s.name;
-          }
-          return null;
-        })(),
-        showImage: (() => {
-          const s = rr.show as Record<string, unknown> | undefined;
-          return s && typeof s.posterPath === "string" ? s.posterPath : null;
-        })(),
-        rating:
-          typeof rr.rating === "number"
-            ? rr.rating
-            : Number(String(rr.rating)) || 0,
-        reviewText: typeof rr.comment === "string" ? rr.comment : "",
-        date:
-          rr.createdAt && typeof rr.createdAt === "string"
-            ? rr.createdAt.split("T")[0]
-            : "",
-        likes: 0,
-      };
-    });
-
-    const favorites = (updated.favorites || []).map((f: unknown) => {
-      const ff = f as Record<string, unknown>;
-      const show = ff.show as Record<string, unknown> | undefined;
-      return {
-        id:
-          show && show.id
-            ? Number(show.id as number | string)
-            : Number(ff.showId as number | string),
-        title: show?.title ?? null,
-        image: show?.posterPath ?? null,
-        rating: null,
-      };
-    });
-
-    const watchlist = (updated.watchlist || []).map((w: unknown) => {
-      const ww = w as Record<string, unknown>;
-      const show = ww.show as Record<string, unknown> | undefined;
-      return {
-        id:
-          show && show.id
-            ? Number(show.id as number | string)
-            : Number(ww.showId as number | string),
-        title: show?.title ?? null,
-        image: show?.posterPath ?? null,
-        rating: null,
-      };
-    });
-
-    return {
-      id: updated.id,
-      username: updated.name ?? updated.email.split("@")[0],
-      email: updated.email,
-      joinDate: updated.createdAt.toISOString().split("T")[0],
-      bio: "",
-      stats: {
-        reviews: reviews.length,
-        favorites: favorites.length,
-        watchlist: watchlist.length,
-      },
-      reviews,
-      favorites,
-      watchlist,
-    };
   });
+
+  fastify.put<{ Body: UpdateUsernameBody }>(
+    "/api/profile",
+    { schema: { body: UpdateUsernameSchema } },
+    async (request, reply) => {
+      try {
+        // Verify JWT from cookie
+        await request.jwtVerify();
+
+        const userId = request.user.userId;
+        if (!userId) {
+          return reply.status(401).send({
+            error: "User ID Not Authenticated",
+          });
+        }
+
+        const { username } = request.body;
+
+        const currentUser = await fastify.prisma.user.findUnique({
+          where: { id: userId },
+          select: { username: true },
+        });
+
+        if (currentUser?.username === username) {
+          return reply.status(400).send({
+            error: "New username must be different from the current username",
+          });
+        }
+
+        // make sure the new username is not already taken
+        const existingUsername = await fastify.prisma.user.findUnique({
+          where: { username },
+        });
+
+        if (existingUsername && existingUsername.id !== userId) {
+          return reply.status(400).send({
+            error: "Username is already taken",
+          });
+        }
+
+        // update username
+        const updatedUser = await fastify.prisma.user.update({
+          where: { id: userId },
+          data: { username },
+          select: {
+            id: true,
+            username: true,
+            email: true,
+            createdAt: true,
+          },
+        });
+
+        return reply.send({ user: updatedUser });
+      } catch (error) {
+        // Not authenticated or invalid generateToken
+        return reply.status(500).send({
+          error: "Not authenticated",
+        });
+      }
+    }
+  );
 };
 
 export default profile;
