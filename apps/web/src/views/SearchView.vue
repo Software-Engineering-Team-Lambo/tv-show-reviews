@@ -53,10 +53,8 @@ onMounted(async () => {
         selectedGenres.value = [route.query.genre as string]
     }
 
-    // Auto-search if we have query params
-    if (route.query.q || route.query.genre) {
-        handleSearch()
-    }
+    // Always search on mount (will return sorted results even without query)
+    handleSearch()
 })
 
 const loadFilters = async () => {
@@ -74,16 +72,8 @@ const loadFilters = async () => {
 }
 
 const handleSearch = async () => {
-    // Allow search with just filters (no text required)
-    const hasQuery = searchQuery.value.trim().length > 0
-    const hasFilters = selectedGenres.value.length > 0 || selectedYear.value !== null
-
-    // Require at least a query or filters
-    if (!hasQuery && !hasFilters) {
-        searchResults.value = []
-        hasSearched.value = false
-        return
-    }
+    isLoading.value = true
+    hasSearched.value = true
 
     // Update URL query params
     const query = searchQuery.value.trim()
@@ -92,16 +82,13 @@ const handleSearch = async () => {
         query: query ? { q: query } : {}
     })
 
-    isLoading.value = true
-    hasSearched.value = true
-
     try {
         // Build the request body with all filters
         const requestBody: SearchRequestBody = {}
 
         // Add query if provided
-        if (hasQuery) {
-            requestBody.query = searchQuery.value
+        if (query) {
+            requestBody.query = query
         }
 
         // Add optional filters if they have values
@@ -159,17 +146,7 @@ const clearFilters = () => {
 
 // Watch for filter changes and auto-search
 watch([selectedGenres, selectedYear, sortBy], () => {
-    const hasQuery = searchQuery.value.trim().length > 0
-    const hasFilters = selectedGenres.value.length > 0 || selectedYear.value !== null
-
-    // If we have either query or filters, search immediately
-    if (hasQuery || hasFilters) {
-        handleSearch()
-    } else if (hasSearched.value) {
-        // If all filters cleared and no query, clear results
-        searchResults.value = []
-        hasSearched.value = false
-    }
+    handleSearch()
 })
 </script>
 

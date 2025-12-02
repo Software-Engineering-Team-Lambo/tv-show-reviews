@@ -51,6 +51,51 @@ export interface Review {
   likes?: number
 }
 
+// Profile-related types
+export interface ProfileShowSummary {
+  id: number
+  title: string
+  posterPath: string | null
+}
+
+export interface ProfileReview {
+  id: number
+  rating: number
+  comment: string | null
+  createdAt: string
+  updatedAt: string
+  show: ProfileShowSummary
+}
+
+export interface ProfileFavorite {
+  id: number
+  createdAt: string
+  show: ProfileShowSummary
+}
+
+export interface ProfileWatchlistItem {
+  id: number
+  addedAt: string
+  note: string | null
+  show: ProfileShowSummary
+}
+
+export interface UserProfile {
+  id: number
+  username: string
+  email: string
+  createdAt: string
+  reviews: ProfileReview[]
+  favorites: ProfileFavorite[]
+  watchlist: ProfileWatchlistItem[]
+}
+
+export interface ProfileStats {
+  reviewsCount: number
+  favoritesCount: number
+  watchlistCount: number
+}
+
 // Search API types
 export interface SearchRequestBody {
   query?: string

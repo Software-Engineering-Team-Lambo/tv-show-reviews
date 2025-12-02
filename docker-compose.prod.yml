@@ -26,6 +26,7 @@ services:
     environment:
       NODE_ENV: production
       DATABASE_URL: mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}
+      JWT_SECRET: ${JWT_SECRET}
       TMDB_API_KEY: ${TMDB_API_KEY} # Only needed if running seed script
     volumes:
       - show_images:/app/show_images # Persistent storage for downloaded images
