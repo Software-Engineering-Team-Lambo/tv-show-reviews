@@ -196,7 +196,7 @@ watch(() => route.params.username, (newUsername) => {
 
 <style scoped>
 /* Custom scrollbar for tabs */
-:deep(.p-tabview-panels) {
+:deep(.p-tabpanels) {
     padding: 1.5rem 0;
 }
 </style>
