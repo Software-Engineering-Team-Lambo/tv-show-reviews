@@ -57,7 +57,7 @@ const fetchProfile = async () => {
         }
 
         const data = await response.json()
-        Object.assign(user.value, data.user)
+        user.value = data.user;
 
     } catch (error: any) {
         console.error('Failed to fetch profile:', error)
@@ -150,7 +150,7 @@ const handleUpdateUsername = async () => {
         }
 
         const data = await response.json()
-        Object.assign(user.value, data.user)
+        user.value = data
         successMessage.value = 'Username updated successfully!'
         showEditDialog.value = false
 
