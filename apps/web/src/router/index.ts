@@ -3,6 +3,7 @@ import HomeView from '../views/HomeView.vue'
 import LoginView from '@/views/LoginView.vue'
 import SearchView from '@/views/SearchView.vue'
 import ProfileView from '@/views/ProfileView.vue'
+import UserProfileView from '@/views/UserProfileView.vue'
 import ShowDetailsView from '@/views/ShowDetailsView.vue'
 
 const router = createRouter({
@@ -24,9 +25,14 @@ const router = createRouter({
       component: SearchView,
     },
     {
-      path: '/profile/:id?',
+      path: '/profile',
       name: 'profile',
       component: ProfileView,
+    },
+    {
+      path: '/user/:username',
+      name: 'user-profile',
+      component: UserProfileView,
     },
     {
       path: '/show/:id',

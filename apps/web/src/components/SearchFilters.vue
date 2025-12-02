@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import Dropdown from 'primevue/dropdown'
+import Select from 'primevue/select'
 import MultiSelect from 'primevue/multiselect'
 import Button from 'primevue/button'
 
@@ -68,13 +68,13 @@ const handleClear = () => {
         <!-- Year Filter -->
         <div>
             <label class="block text-sm font-medium mb-2">Year</label>
-            <Dropdown v-model="localYear" :options="years" placeholder="Select year" showClear class="w-full" />
+            <Select v-model="localYear" :options="years" placeholder="Select year" showClear class="w-full" />
         </div>
 
         <!-- Sort By -->
         <div>
             <label class="block text-sm font-medium mb-2">Sort By</label>
-            <Dropdown v-model="localSortBy" :options="sortOptions" optionLabel="label" optionValue="value"
+            <Select v-model="localSortBy" :options="sortOptions" optionLabel="label" optionValue="value"
                 class="w-full" />
         </div>
     </div>
