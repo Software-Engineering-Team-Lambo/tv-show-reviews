@@ -55,8 +55,9 @@ const handleSearch = () => {
                 <!-- Logo -->
                 <router-link to="/"
                     class="flex items-center gap-2 text-2xl font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors">
-                    <span>🛋️</span>
-                    <span class="hidden sm:inline">Couch Critics</span>
+                    <img src="/couchcritics.png" alt="Couch Critics logo" class="w-20 h-20" />
+                    <span class="hidden sm:inline"><span style="color:#de2886">Couch</span> <span
+                            style="color:#f77b29">Critics</span></span>
                 </router-link>
 
                 <!-- Search Bar -->

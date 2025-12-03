@@ -1,54 +1,42 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
-import AuthCard from '../components/auth/AuthCard.vue'
-import ForgotPasswordCard from '../components/auth/ForgotPasswordCard.vue'
+import Button from 'primevue/button'
+import InputText from 'primevue/inputtext'
+import Password from 'primevue/password'
+import Card from 'primevue/card'
+import Divider from 'primevue/divider'
 
 const router = useRouter()
-const authStore = useAuthStore()
+const activeTab = ref<'login' | 'signup'>('login')
 const showForgotPassword = ref(false)
-const errorMessage = ref('')
-const successMessage = ref('')
-const loading = ref(false)
 
-const handleLogin = async (emailOrUsername: string, password: string) => {
-    errorMessage.value = ''
-    successMessage.value = ''
-    loading.value = true
+// Form fields
+const email = ref('')
+const password = ref('')
+const confirmPassword = ref('')
+const username = ref('')
 
-    try {
-        await authStore.login(emailOrUsername, password)
-        router.push('/')
-    } catch (error) {
-        console.error('Login failed:', error)
-        errorMessage.value = error instanceof Error ? error.message : 'Login failed. Please try again.'
-    } finally {
-        loading.value = false
-    }
+const handleLogin = () => {
+    // TODO: Implement login logic
+    console.log('Login:', { email: email.value, password: password.value })
+    router.push('/')
 }
 
-const handleSignup = async (username: string, email: string, password: string) => {
-    errorMessage.value = ''
-    successMessage.value = ''
-    loading.value = true
-
-    try {
-        await authStore.signup(username, email, password)
-        router.push('/')
-    } catch (error) {
-        console.error('Signup failed:', error)
-        errorMessage.value = error instanceof Error ? error.message : 'Signup failed. Please try again.'
-    } finally {
-        loading.value = false
-    }
+const handleSignup = () => {
+    // TODO: Implement signup logic
+    console.log('Signup:', {
+        username: username.value,
+        email: email.value,
+        password: password.value,
+    })
+    router.push('/')
 }
 
-const handleForgotPassword = (email: string) => {
+const handleForgotPassword = () => {
     // TODO: Implement forgot password logic
-    console.log('Forgot password:', email)
+    console.log('Forgot password:', email.value)
     showForgotPassword.value = false
-    successMessage.value = 'If an account exists with this email, you will receive a password reset link.'
 }
 </script>
 
@@ -58,22 +46,114 @@ const handleForgotPassword = (email: string) => {
         <div class="w-full max-w-md">
             <!-- Logo/Brand -->
             <div class="text-center mb-8">
-                <router-link to="/" class="inline-block hover:opacity-80 transition-opacity">
-                    <h1 class="text-5xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
-                        🛋️ Couch Critics
-                    </h1>
-                </router-link>
+                <h1 class="text-5xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
+                    <img src="/couchcritics.png" alt="Couch Critics logo"
+                        class="inline-block w-30 h-30 mr-3 align-middle" />
+                    <span><span style="color:#de2886">Couch</span> <span style="color:#f77b29">Critics</span></span>
+                </h1>
                 <p class="text-gray-600 dark:text-gray-400">Your TV Show Review Community</p>
             </div>
 
-            <!-- Forgot Password Card -->
-            <ForgotPasswordCard v-if="showForgotPassword" @close="showForgotPassword = false"
-                @submit="handleForgotPassword" />
+            <!-- Forgot Password Modal -->
+            <Card v-if="showForgotPassword" class="mb-4">
+                <template #title>
+                    <div class="flex justify-between items-center">
+                        <span>Reset Password</span>
+                        <Button icon="pi pi-times" text rounded @click="showForgotPassword = false" />
+                    </div>
+                </template>
+                <template #content>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="reset-email" class="block text-sm font-medium mb-2">Email</label>
+                            <InputText id="reset-email" v-model="email" type="email" placeholder="Enter your email"
+                                class="w-full" />
+                        </div>
+                        <Button label="Send Reset Link" icon="pi pi-send" class="w-full"
+                            @click="handleForgotPassword" />
+                    </div>
+                </template>
+            </Card>
 
-            <!-- Auth Card (Login/Signup) -->
-            <AuthCard v-else :error-message="errorMessage" :success-message="successMessage" :loading="loading"
-                @login="handleLogin" @signup="handleSignup" @forgot-password="showForgotPassword = true"
-                @clear-error="errorMessage = ''" @clear-success="successMessage = ''" />
+            <!-- Login/Signup Card -->
+            <Card v-else>
+                <template #title>
+                    <!-- Tab Buttons -->
+                    <div class="flex gap-2 mb-4">
+                        <Button :label="'Login'" :severity="activeTab === 'login' ? 'primary' : 'secondary'"
+                            :outlined="activeTab !== 'login'" class="flex-1" @click="activeTab = 'login'" />
+                        <Button :label="'Sign Up'" :severity="activeTab === 'signup' ? 'primary' : 'secondary'"
+                            :outlined="activeTab !== 'signup'" class="flex-1" @click="activeTab = 'signup'" />
+                    </div>
+                </template>
+
+                <template #content>
+                    <!-- Login Form -->
+                    <form v-if="activeTab === 'login'" @submit.prevent="handleLogin" class="space-y-4">
+                        <div>
+                            <label for="login-email" class="block text-sm font-medium mb-2">Email</label>
+                            <InputText id="login-email" v-model="email" type="email" placeholder="Enter your email"
+                                class="w-full" required />
+                        </div>
+
+                        <div>
+                            <label for="login-password" class="block text-sm font-medium mb-2">
+                                Password
+                            </label>
+                            <Password id="login-password" v-model="password" placeholder="Enter your password"
+                                :feedback="false" toggleMask class="w-full" inputClass="w-full" required />
+                        </div>
+
+                        <div class="flex justify-between items-center">
+                            <Button label="Forgot Password?" link size="small" @click="showForgotPassword = true" />
+                        </div>
+
+                        <Button type="submit" label="Login" icon="pi pi-sign-in" class="w-full" />
+                    </form>
+
+                    <!-- Signup Form -->
+                    <form v-else @submit.prevent="handleSignup" class="space-y-4">
+                        <div>
+                            <label for="signup-username" class="block text-sm font-medium mb-2">
+                                Username
+                            </label>
+                            <InputText id="signup-username" v-model="username" placeholder="Choose a username"
+                                class="w-full" required />
+                        </div>
+
+                        <div>
+                            <label for="signup-email" class="block text-sm font-medium mb-2">Email</label>
+                            <InputText id="signup-email" v-model="email" type="email" placeholder="Enter your email"
+                                class="w-full" required />
+                        </div>
+
+                        <div>
+                            <label for="signup-password" class="block text-sm font-medium mb-2">
+                                Password
+                            </label>
+                            <Password id="signup-password" v-model="password" placeholder="Create a password" toggleMask
+                                class="w-full" inputClass="w-full" required />
+                        </div>
+
+                        <div>
+                            <label for="confirm-password" class="block text-sm font-medium mb-2">
+                                Confirm Password
+                            </label>
+                            <Password id="confirm-password" v-model="confirmPassword"
+                                placeholder="Confirm your password" :feedback="false" toggleMask class="w-full"
+                                inputClass="w-full" required />
+                        </div>
+
+                        <Button type="submit" label="Create Account" icon="pi pi-user-plus" class="w-full" />
+                    </form>
+
+                    <Divider />
+
+                    <div class="text-center text-sm text-gray-600 dark:text-gray-400">
+                        <p>By continuing, you agree to our Terms of Service and Privacy Policy</p>
+                    </div>
+                </template>
+            </Card>
         </div>
     </div>
 </template>
