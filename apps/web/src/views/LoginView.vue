@@ -49,7 +49,7 @@ const handleForgotPassword = () => {
                 <h1 class="text-5xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
                     <img src="/couchcritics.png" alt="Couch Critics logo"
                         class="inline-block w-30 h-30 mr-3 align-middle" />
-                    <span><span style="color:#de2886">Couch</span> <span style="color:#f77b29">Critics</span></span>
+                    <span class="couch-critics-brand"><span style="color:#de2886">Couch</span> <span style="color:#f77b29">Critics</span></span>
                 </h1>
                 <p class="text-gray-600 dark:text-gray-400">Your TV Show Review Community</p>
             </div>
