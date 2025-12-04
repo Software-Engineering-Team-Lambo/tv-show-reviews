@@ -121,6 +121,24 @@ jobs:
         run: npx prisma generate
         working-directory: ./apps/api
 
+      - name: Build API
+        run: npm run build -w=api
+
+      - name: Build Web
+        run: npm run build -w=web
+
+      - name: Run database migrations
+        run: npx prisma migrate deploy
+        working-directory: ./apps/api
+        env:
+          DATABASE_URL: mysql://root:rootpass@localhost:3306/tv_ratings_test
+
+      - name: Seed database
+        run: npm run seed -w=api
+        env:
+          DATABASE_URL: mysql://root:rootpass@localhost:3306/tv_ratings_test
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
         working-directory: ./apps/web

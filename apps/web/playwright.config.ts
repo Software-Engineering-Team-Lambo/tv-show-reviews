@@ -19,7 +19,7 @@ export default defineConfig({
   /* Shared settings for all the projects below */
   use: {
     /* Base URL to use in actions like `await page.goto('/')` */
-    baseURL: 'http://localhost:5173',
+    baseURL: process.env.CI ? 'http://localhost:4173' : 'http://localhost:5173',
     /* Collect trace when retrying the failed test */
     trace: 'on-first-retry',
     /* Take screenshot on failure */
@@ -37,20 +37,22 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: [
     {
-      command: 'npm run dev',
+      // CI: use production server (already built); Locally: use dev server
+      command: process.env.CI ? 'npm run start:prod' : 'npm run dev',
       cwd: '../api',
       url: 'http://localhost:3000',
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
       env: {
         ...process.env,
-        // Locally: use .env.test; CI: env vars are already set and won't be overridden
+        // Locally: use .env.test; CI: env vars are already set
         ...(process.env.CI ? {} : { DOTENV_CONFIG_PATH: '.env.test' }),
       },
     },
     {
-      command: 'npm run dev',
-      url: 'http://localhost:5173',
+      // CI: use preview server (serves built files); Locally: use dev server
+      command: process.env.CI ? 'npm run preview' : 'npm run dev',
+      url: process.env.CI ? 'http://localhost:4173' : 'http://localhost:5173',
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
     },
