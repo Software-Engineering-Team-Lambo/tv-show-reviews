@@ -108,6 +108,16 @@ test.describe('Favorites Feature', () => {
     ).toBeVisible({
       timeout: 10000,
     })
+
+    // Reload page to verify persistence
+    await page.reload()
+
+    // Should still show as favorited after reload
+    await expect(
+      page.getByRole('button', { name: /remove from favorites|favorited/i }),
+    ).toBeVisible({
+      timeout: 10000,
+    })
   })
 
   test('should remove show from favorites', async ({ page }) => {
@@ -126,6 +136,14 @@ test.describe('Favorites Feature', () => {
     await removeBtn.click()
 
     // Should change back to "Add to Favorites"
+    await expect(page.getByRole('button', { name: /add to favorites/i })).toBeVisible({
+      timeout: 10000,
+    })
+
+    // Reload page to verify persistence
+    await page.reload()
+
+    // Should still show as not favorited after reload
     await expect(page.getByRole('button', { name: /add to favorites/i })).toBeVisible({
       timeout: 10000,
     })
@@ -194,6 +212,16 @@ test.describe('Watchlist Feature', () => {
     ).toBeVisible({
       timeout: 10000,
     })
+
+    // Reload page to verify persistence
+    await page.reload()
+
+    // Should still show as in watchlist after reload
+    await expect(
+      page.getByRole('button', { name: /remove from watchlist|in watchlist/i }),
+    ).toBeVisible({
+      timeout: 10000,
+    })
   })
 
   test('should remove show from watchlist', async ({ page }) => {
@@ -220,6 +248,14 @@ test.describe('Watchlist Feature', () => {
     await removeBtn.click()
 
     // Should change back to "Add to Watchlist"
+    await expect(page.getByRole('button', { name: /add to watchlist/i })).toBeVisible({
+      timeout: 10000,
+    })
+
+    // Reload page to verify persistence
+    await page.reload()
+
+    // Should still show as not in watchlist after reload
     await expect(page.getByRole('button', { name: /add to watchlist/i })).toBeVisible({
       timeout: 10000,
     })
@@ -263,6 +299,16 @@ test.describe('Reviews Feature', () => {
     await submitBtn.click()
 
     // Review should appear in the list
+    await expect(
+      page.getByText('This is a great show! Highly recommend watching it.').last(),
+    ).toBeVisible({
+      timeout: 10000,
+    })
+
+    // Reload page to verify persistence
+    await page.reload()
+
+    // Review should still be visible after reload
     await expect(
       page.getByText('This is a great show! Highly recommend watching it.').last(),
     ).toBeVisible({
