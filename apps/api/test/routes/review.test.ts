@@ -292,6 +292,13 @@ describe("Review Routes", () => {
       const body = JSON.parse(response.payload);
       expect(body.rating).toBe(5);
       expect(body.comment).toBe("Updated comment");
+
+      // Verify update persisted in database
+      const updatedReview = await prisma.review.findUnique({
+        where: { id: reviewId },
+      });
+      expect(updatedReview?.rating).toBe(5);
+      expect(updatedReview?.comment).toBe("Updated comment");
     });
 
     it("should return 401 without auth", async () => {

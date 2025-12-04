@@ -224,6 +224,16 @@ describe("Authentication Routes", () => {
       const cookies = response.cookies;
       const tokenCookie = cookies.find((c) => c.name === "token");
       expect(tokenCookie).toBeDefined();
+
+      // Verify the token works for authenticated requests
+      const meResponse = await app.inject({
+        method: "GET",
+        url: "/api/auth/me",
+        cookies: { token: tokenCookie!.value },
+      });
+      expect(meResponse.statusCode).toBe(200);
+      const meBody = JSON.parse(meResponse.payload);
+      expect(meBody.user.email).toBe(testUser.email);
     });
 
     it("should login with valid username and password", async () => {

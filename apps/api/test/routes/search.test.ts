@@ -202,12 +202,19 @@ describe("POST /api/search", () => {
     const response = await app.inject({
       method: "POST",
       url: "/api/search",
-      payload: { sortBy: "title" },
+      payload: { sortBy: "title", limit: 20 },
     });
 
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.payload);
     expect(body.results.length).toBeGreaterThan(0);
+
+    // Verify results are sorted by title (ascending)
+    for (let i = 1; i < body.results.length; i++) {
+      const prevTitle = body.results[i - 1].title.toLowerCase();
+      const currTitle = body.results[i].title.toLowerCase();
+      expect(prevTitle.localeCompare(currTitle)).toBeLessThanOrEqual(0);
+    }
   });
 });
 
