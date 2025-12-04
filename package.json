@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "concurrently -k -n api,web -c auto \"npm:dev -w api\" \"npx wait-on tcp:3000 && npm:dev -w web\"",
+    "dev": "concurrently -k -n api,web -c auto \"npm:dev -w api\" \"npx wait-on tcp:3000 && npm run dev -w web\"",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
