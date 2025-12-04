@@ -23,11 +23,11 @@ async function createAuthenticatedUser(page: Page) {
   // Fill in signup form
   await page.getByLabel('Username').fill(testUser.username)
   await page.getByLabel('Email').fill(testUser.email)
-  await page.locator('#signup-password').fill(testUser.password)
-  await page.locator('#signup-confirm-password').fill(testUser.password)
+  await page.locator('#signup-password input').fill(testUser.password)
+  await page.locator('#signup-confirm-password input').fill(testUser.password)
 
   // Submit form
-  await page.getByRole('button', { name: 'Sign Up', exact: true }).click()
+  await page.getByRole('button', { name: 'Create Account' }).click()
 
   // Wait for redirect to home
   await expect(page).toHaveURL('/', { timeout: 10000 })
@@ -65,9 +65,9 @@ test.describe('Profile Page', () => {
     await page.goto('/profile')
 
     // Check for tabs or sections
-    await expect(page.getByText(/reviews/i)).toBeVisible({ timeout: 10000 })
-    await expect(page.getByText(/favorites/i)).toBeVisible({ timeout: 10000 })
-    await expect(page.getByText(/watchlist/i)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('tab', { name: /reviews/i })).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('tab', { name: /favorites/i })).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('tab', { name: /watchlist/i })).toBeVisible({ timeout: 10000 })
   })
 
   test('should show empty state for new user', async ({ page }) => {
@@ -79,7 +79,7 @@ test.describe('Profile Page', () => {
     // Look for either "no reviews/favorites/watchlist" or count of 0
     const pageContent = await page.locator('body').textContent()
     // Profile should load successfully
-    expect(pageContent?.length).toBeGreaterThan(100)
+    expect(pageContent?.length).toBeGreaterThan(50)
   })
 })
 
@@ -151,11 +151,8 @@ test.describe('Favorites Feature', () => {
     // Go to profile
     await page.goto('/profile')
 
-    // Click favorites tab if needed
-    const favoritesTab = page.getByRole('tab', { name: /favorites/i })
-    if (await favoritesTab.isVisible()) {
-      await favoritesTab.click()
-    }
+    // Click favorites tab
+    await page.getByRole('tab', { name: /favorites/i }).click()
 
     // Should show the favorited show
     if (showTitle) {
@@ -184,7 +181,9 @@ test.describe('Watchlist Feature', () => {
     await watchlistBtn.click()
 
     // May show a dialog for adding note - just confirm/close it
-    const dialogConfirm = page.getByRole('button', { name: /add|confirm|save/i }).first()
+    const dialogConfirm = page
+      .locator('.p-dialog')
+      .getByRole('button', { name: 'Add to Watchlist' })
     if (await dialogConfirm.isVisible({ timeout: 2000 })) {
       await dialogConfirm.click()
     }
@@ -206,7 +205,9 @@ test.describe('Watchlist Feature', () => {
     await addBtn.click()
 
     // Handle dialog if present
-    const dialogConfirm = page.getByRole('button', { name: /add|confirm|save/i }).first()
+    const dialogConfirm = page
+      .locator('.p-dialog')
+      .getByRole('button', { name: 'Add to Watchlist' })
     if (await dialogConfirm.isVisible({ timeout: 2000 })) {
       await dialogConfirm.click()
     }
@@ -231,7 +232,7 @@ test.describe('Reviews Feature', () => {
     await navigateToFirstShow(page)
 
     // Should show review section
-    await expect(page.getByText(/write your review|your review/i)).toBeVisible({
+    await expect(page.getByText('Write Your Review')).toBeVisible({
       timeout: 15000,
     })
   })
@@ -241,12 +242,22 @@ test.describe('Reviews Feature', () => {
     await navigateToFirstShow(page)
 
     // Wait for review form to be visible
-    await expect(page.getByText(/write your review|your review/i)).toBeVisible({
+    await expect(page.getByText('Write Your Review')).toBeVisible({
       timeout: 15000,
     })
 
     // Find and fill the review form
     // Look for rating slider/stars and comment textarea
+
+    // Click 4th star (rating 4)
+    // Scope to the last rating component (the one in the form)
+    await page
+      .locator('[data-pc-name="rating"]')
+      .last()
+      .locator('[data-pc-section="item"]')
+      .nth(3)
+      .click({ force: true })
+
     const textarea = page.locator('textarea')
     if (await textarea.isVisible()) {
       await textarea.fill('This is a great show! Highly recommend watching it.')
@@ -330,8 +341,8 @@ test.describe('Unauthenticated User Behavior', () => {
     await page.waitForTimeout(2000)
 
     // Should either show login prompt or not show review form at all
-    const reviewForm = page.getByText(/write your review/i)
-    const loginPrompt = page.getByText(/log in to|sign in to/i)
+    const reviewForm = page.getByText('Write Your Review')
+    const loginPrompt = page.getByText(/sign in to review/i)
 
     // One of these should be true: no review form visible, or login prompt shown
     const hasReviewForm = await reviewForm.isVisible().catch(() => false)

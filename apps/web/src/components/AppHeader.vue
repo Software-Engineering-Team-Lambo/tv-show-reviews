@@ -78,7 +78,7 @@ const handleSearch = () => {
                     <template v-if="authStore.isAuthenticated">
 
                         <Avatar :label="userInitial" shape="circle" class="cursor-pointer bg-indigo-600 text-white"
-                            @click="toggleUserMenu" />
+                            @click="toggleUserMenu" role="button" :aria-label="authStore.user?.username" />
 
                         <Menu ref="userMenu" :model="userMenuItems" popup />
                     </template>

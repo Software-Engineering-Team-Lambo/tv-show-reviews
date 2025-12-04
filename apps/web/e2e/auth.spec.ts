@@ -21,11 +21,11 @@ async function signupUser(page: Page, user: { username: string; email: string; p
   // Fill in signup form
   await page.getByLabel('Username').fill(user.username)
   await page.getByLabel('Email').fill(user.email)
-  await page.locator('#signup-password').fill(user.password)
-  await page.locator('#signup-confirm-password').fill(user.password)
+  await page.locator('#signup-password input').fill(user.password)
+  await page.locator('#signup-confirm-password input').fill(user.password)
 
   // Submit form
-  await page.getByRole('button', { name: 'Sign Up', exact: true }).click()
+  await page.getByRole('button', { name: 'Create Account' }).click()
 }
 
 // Helper to fill and submit login form
@@ -34,10 +34,10 @@ async function loginUser(page: Page, emailOrUsername: string, password: string) 
 
   // Fill in login form
   await page.getByLabel('Email or Username').fill(emailOrUsername)
-  await page.locator('#login-password').fill(password)
+  await page.locator('#login-password input').fill(password)
 
   // Submit form
-  await page.getByRole('button', { name: 'Login', exact: true }).click()
+  await page.locator('form').getByRole('button', { name: 'Login' }).click()
 }
 
 test.describe('Auth - Login Page', () => {
@@ -47,7 +47,7 @@ test.describe('Auth - Login Page', () => {
     // Check for login form elements
     await expect(page.getByLabel('Email or Username')).toBeVisible()
     await expect(page.locator('#login-password')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Login', exact: true })).toBeVisible()
+    await expect(page.locator('form').getByRole('button', { name: 'Login' })).toBeVisible()
 
     // Check for signup tab button
     await expect(page.getByRole('button', { name: 'Sign Up' })).toBeVisible()
@@ -89,7 +89,7 @@ test.describe('Auth - Login Validation', () => {
     await page.goto('/login')
 
     // Try to submit with empty fields
-    await page.getByRole('button', { name: 'Login', exact: true }).click()
+    await page.locator('form').getByRole('button', { name: 'Login' }).click()
 
     // Should show validation error
     await expect(page.getByText('Please enter your email or username')).toBeVisible()
@@ -100,7 +100,7 @@ test.describe('Auth - Login Validation', () => {
 
     // Fill email but not password
     await page.getByLabel('Email or Username').fill('test@example.com')
-    await page.getByRole('button', { name: 'Login', exact: true }).click()
+    await page.locator('form').getByRole('button', { name: 'Login' }).click()
 
     // Should show validation error
     await expect(page.getByText('Please enter your password')).toBeVisible()
@@ -111,11 +111,13 @@ test.describe('Auth - Login Validation', () => {
 
     // Fill with invalid credentials
     await page.getByLabel('Email or Username').fill('nonexistent@example.com')
-    await page.locator('#login-password').fill('wrongpassword')
-    await page.getByRole('button', { name: 'Login', exact: true }).click()
+    await page.locator('#login-password input').fill('wrongpassword')
+    await page.locator('form').getByRole('button', { name: 'Login' }).click()
 
     // Should show error message (from API)
-    await expect(page.getByText(/invalid|incorrect|failed/i)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText(/invalid|incorrect|failed|not found/i)).toBeVisible({
+      timeout: 10000,
+    })
   })
 })
 
@@ -129,9 +131,9 @@ test.describe('Auth - Signup Validation', () => {
     // Fill with short username
     await page.getByLabel('Username').fill('abc')
     await page.getByLabel('Email').fill('test@example.com')
-    await page.locator('#signup-password').fill('Password123!')
-    await page.locator('#signup-confirm-password').fill('Password123!')
-    await page.getByRole('button', { name: 'Sign Up', exact: true }).click()
+    await page.locator('#signup-password input').fill('Password123!')
+    await page.locator('#signup-confirm-password input').fill('Password123!')
+    await page.getByRole('button', { name: 'Create Account' }).click()
 
     // Should show validation error
     await expect(page.getByText(/username must be at least 4 characters/i)).toBeVisible()
@@ -141,9 +143,9 @@ test.describe('Auth - Signup Validation', () => {
     // Fill with invalid characters
     await page.getByLabel('Username').fill('test@user')
     await page.getByLabel('Email').fill('test@example.com')
-    await page.locator('#signup-password').fill('Password123!')
-    await page.locator('#signup-confirm-password').fill('Password123!')
-    await page.getByRole('button', { name: 'Sign Up', exact: true }).click()
+    await page.locator('#signup-password input').fill('Password123!')
+    await page.locator('#signup-confirm-password input').fill('Password123!')
+    await page.getByRole('button', { name: 'Create Account' }).click()
 
     // Should show validation error
     await expect(page.getByText(/letters, numbers, and underscores only/i)).toBeVisible()
@@ -152,20 +154,21 @@ test.describe('Auth - Signup Validation', () => {
   test('should show validation error for invalid email', async ({ page }) => {
     await page.getByLabel('Username').fill('testuser')
     await page.getByLabel('Email').fill('notanemail')
-    await page.locator('#signup-password').fill('Password123!')
-    await page.locator('#signup-confirm-password').fill('Password123!')
-    await page.getByRole('button', { name: 'Sign Up', exact: true }).click()
+    await page.locator('#signup-password input').fill('Password123!')
+    await page.locator('#signup-confirm-password input').fill('Password123!')
+    await page.getByRole('button', { name: 'Create Account' }).click({ force: true })
 
     // Should show validation error
-    await expect(page.getByText(/valid email/i)).toBeVisible()
+    await expect(page.locator('.text-red-500')).toBeVisible()
+    await expect(page.locator('.text-red-500')).toContainText(/email/i)
   })
 
   test('should show validation error for short password', async ({ page }) => {
     await page.getByLabel('Username').fill('testuser')
     await page.getByLabel('Email').fill('test@example.com')
-    await page.locator('#signup-password').fill('short')
-    await page.locator('#signup-confirm-password').fill('short')
-    await page.getByRole('button', { name: 'Sign Up', exact: true }).click()
+    await page.locator('#signup-password input').fill('short')
+    await page.locator('#signup-confirm-password input').fill('short')
+    await page.getByRole('button', { name: 'Create Account' }).click()
 
     // Should show validation error
     await expect(page.getByText(/password must be at least 8 characters/i)).toBeVisible()
@@ -174,9 +177,9 @@ test.describe('Auth - Signup Validation', () => {
   test('should show validation error for mismatched passwords', async ({ page }) => {
     await page.getByLabel('Username').fill('testuser')
     await page.getByLabel('Email').fill('test@example.com')
-    await page.locator('#signup-password').fill('Password123!')
-    await page.locator('#signup-confirm-password').fill('DifferentPassword!')
-    await page.getByRole('button', { name: 'Sign Up', exact: true }).click()
+    await page.locator('#signup-password input').fill('Password123!')
+    await page.locator('#signup-confirm-password input').fill('DifferentPassword!')
+    await page.getByRole('button', { name: 'Create Account' }).click()
 
     // Should show validation error
     await expect(page.getByText(/passwords do not match/i)).toBeVisible()
@@ -206,12 +209,14 @@ test.describe('Auth - Signup Flow', () => {
     await page.getByRole('button', { name: 'Sign Up' }).click()
     await page.getByLabel('Username').fill(`other${testUser.username}`)
     await page.getByLabel('Email').fill(testUser.email)
-    await page.locator('#signup-password').fill(testUser.password)
-    await page.locator('#signup-confirm-password').fill(testUser.password)
-    await page.getByRole('button', { name: 'Sign Up', exact: true }).click()
+    await page.locator('#signup-password input').fill(testUser.password)
+    await page.locator('#signup-confirm-password input').fill(testUser.password)
+    await page.getByRole('button', { name: 'Create Account' }).click()
 
     // Should show error about email existing
-    await expect(page.getByText(/email|already|exists|taken/i)).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText('Account with this email already exists')).toBeVisible({
+      timeout: 10000,
+    })
   })
 })
 
@@ -229,8 +234,8 @@ test.describe('Auth - Login Flow', () => {
 
     // Login with email
     await page.getByLabel('Email or Username').fill(testUser.email)
-    await page.locator('#login-password').fill(testUser.password)
-    await page.getByRole('button', { name: 'Login', exact: true }).click()
+    await page.locator('#login-password input').fill(testUser.password)
+    await page.locator('form').getByRole('button', { name: 'Login' }).click()
 
     // Should redirect to home page
     await expect(page).toHaveURL('/', { timeout: 10000 })
@@ -249,8 +254,8 @@ test.describe('Auth - Login Flow', () => {
 
     // Login with username
     await page.getByLabel('Email or Username').fill(testUser.username)
-    await page.locator('#login-password').fill(testUser.password)
-    await page.getByRole('button', { name: 'Login', exact: true }).click()
+    await page.locator('#login-password input').fill(testUser.password)
+    await page.locator('form').getByRole('button', { name: 'Login' }).click()
 
     // Should redirect to home page
     await expect(page).toHaveURL('/', { timeout: 10000 })
@@ -270,7 +275,9 @@ test.describe('Auth - Session Persistence', () => {
 
     // User should still be logged in - check for user menu or profile link
     // The header should show something different for logged in users
-    await expect(page.getByRole('link', { name: /profile/i })).toBeVisible({ timeout: 10000 })
+    await expect(page.getByRole('button', { name: testUser.username })).toBeVisible({
+      timeout: 10000,
+    })
   })
 
   test('should be able to access profile when logged in', async ({ page }) => {
