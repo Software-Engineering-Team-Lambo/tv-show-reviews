@@ -9,7 +9,7 @@ import {
   type FavoriteWithShow,
   type WatchlistWithShow,
   createPaginationInfo,
-} from "../types/types-profile.ts";
+} from "../types/user-profile.js";
 
 // Define the profile update request schema
 const UpdateUsernameSchema = Type.Object({
