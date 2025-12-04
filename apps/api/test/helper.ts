@@ -1,40 +1,36 @@
 // This file contains code that we reuse between our tests.
-import * as path from 'node:path'
-import * as test from 'node:test'
-const helper = require('fastify-cli/helper.js')
+import dotenv from "dotenv";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import fs from "node:fs";
 
-export type TestContext = {
-  after: typeof test.after
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Load test environment variables:
+// - In CI: env vars are already set by GitHub Actions
+// - Locally: load from .env.test file
+const envTestPath = path.join(__dirname, "../.env.test");
+if (fs.existsSync(envTestPath)) {
+  dotenv.config({ path: envTestPath, override: true });
 }
 
-const AppPath = path.join(__dirname, '..', 'src', 'app.ts')
+import Fastify from "fastify";
+import { PrismaClient } from "../generated/prisma/index.js";
+import app from "../src/app.js";
 
-// Fill in this config with all the configurations
-// needed for testing the application
-function config () {
-  return {
-    skipOverride: true // Register our application with fastify-plugin
-  }
-}
+// Create a Prisma client for test utilities
+export const prisma = new PrismaClient();
 
-// Automatically build and tear down our instance
-async function build (t: TestContext) {
-  // you can set all the options supported by the fastify CLI command
-  const argv = [AppPath]
+/**
+ * Build a Fastify app instance for testing
+ */
+export async function buildApp() {
+  const fastify = Fastify({
+    logger: false, // Disable logging during tests
+  });
 
-  // fastify-plugin ensures that all decorators
-  // are exposed for testing purposes, this is
-  // different from the production setup
-  const app = await helper.build(argv, config())
+  await fastify.register(app);
+  await fastify.ready();
 
-  // Tear down our app after we are done
-  // eslint-disable-next-line no-void
-  t.after(() => void app.close())
-
-  return app
-}
-
-export {
-  config,
-  build
+  return fastify;
 }

@@ -1,4 +1,4 @@
-import { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
 
 const auth: FastifyPluginAsync = async (fastify) => {
   // Check if user is authenticated

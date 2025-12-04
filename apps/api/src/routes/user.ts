@@ -1,16 +1,16 @@
-import { FastifyPluginAsync } from "fastify";
-import { Static, Type } from "@sinclair/typebox";
-import { Prisma } from "../../generated/prisma";
+import type { FastifyPluginAsync } from "fastify";
+import { type Static, Type } from "@sinclair/typebox";
+import { Prisma } from "../../generated/prisma/index.js";
 import {
-  ProfileTab,
-  PublicProfileUser,
-  PublicProfileResponse,
-  ReviewWithShow,
-  FavoriteWithShow,
-  WatchlistWithShow,
+  type ProfileTab,
+  type PublicProfileUser,
+  type PublicProfileResponse,
+  type ReviewWithShow,
+  type FavoriteWithShow,
+  type WatchlistWithShow,
   createPaginationInfo,
   toPublicWatchlist,
-} from "../types/types-profile";
+} from "../types/user-profile.ts";
 
 // Pagination query schema
 const PaginationQuerySchema = Type.Object({

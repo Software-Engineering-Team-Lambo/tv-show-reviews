@@ -1,4 +1,4 @@
-import { Prisma, Show } from "../../generated/prisma";
+import { Prisma, type Show } from "../../generated/prisma/index.js";
 
 // Tab types for pagination
 export type ProfileTab = "reviews" | "favorites" | "watchlist";

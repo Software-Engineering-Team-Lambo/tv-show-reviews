@@ -1,5 +1,5 @@
-import { FastifyPluginAsync } from "fastify";
-import { Type, Static } from "@sinclair/typebox";
+import type { FastifyPluginAsync } from "fastify";
+import { Type, type Static } from "@sinclair/typebox";
 
 // Schema for adding a favorite
 const FavoriteBodySchema = Type.Object({

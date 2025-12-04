@@ -1,10 +1,25 @@
 import { join } from "node:path";
-import AutoLoad, { AutoloadPluginOptions } from "@fastify/autoload";
-import { FastifyPluginAsync, FastifyServerOptions } from "fastify";
+import AutoLoad from "@fastify/autoload";
+import type { AutoloadPluginOptions } from "@fastify/autoload";
+import type { FastifyPluginAsync, FastifyServerOptions } from "fastify";
 import { TypeBoxValidatorCompiler } from "@fastify/type-provider-typebox";
 import fastifyJwt from "@fastify/jwt";
 import fastifyCookie from "@fastify/cookie";
-import "dotenv/config";
+import dotenv from "dotenv";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+// Load environment variables:
+// - In CI: env vars are already set, dotenv just fills in any gaps
+// - Locally with DOTENV_CONFIG_PATH: load from that file (e.g., .env.test for E2E tests)
+// - Locally otherwise: load from .env
+dotenv.config({
+  path: process.env.DOTENV_CONFIG_PATH || ".env",
+  override: false, // Don't override existing env vars (CI sets them directly)
+});
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 export interface AppOptions
   extends FastifyServerOptions,

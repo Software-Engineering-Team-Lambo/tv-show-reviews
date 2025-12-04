@@ -1,12 +1,13 @@
-import { FastifyPluginAsync } from "fastify";
-import { Static, Type } from "@sinclair/typebox";
+import type { FastifyPluginAsync } from "fastify";
+import { Type } from "@sinclair/typebox";
+import type { Static } from "@sinclair/typebox";
 import type {
   SearchResult,
   FilterOptions,
   SortBy,
   ShowWhereInput,
   ShowOrderByInput,
-} from "../types/search";
+} from "../types/search.js";
 
 // Define the search request schema
 const SearchBodySchema = Type.Object({

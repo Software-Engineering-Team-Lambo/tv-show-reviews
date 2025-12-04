@@ -1,4 +1,4 @@
-import "dotenv/config";
+// Note: dotenv is loaded in app.ts which supports DOTENV_CONFIG_PATH
 import Fastify from "fastify";
 import { TypeBoxTypeProvider } from "@fastify/type-provider-typebox";
 import app from "./app.js";

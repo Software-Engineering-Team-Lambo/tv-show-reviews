@@ -1,5 +1,5 @@
-import { FastifyPluginAsync } from "fastify";
-import { Static, Type } from "@sinclair/typebox";
+import type { FastifyPluginAsync } from "fastify";
+import { type Static, Type } from "@sinclair/typebox";
 import argon2 from "argon2";
 
 // Define the signup request schema
@@ -43,7 +43,7 @@ const loginSignup: FastifyPluginAsync = async (fastify) => {
   };
 
   fastify.post<{ Body: SignupBody }>(
-    "/api/loginSignup/signup",
+    "/api/login-signup/signup",
     {
       schema: {
         body: SignupBodySchema,
@@ -123,7 +123,7 @@ const loginSignup: FastifyPluginAsync = async (fastify) => {
   );
 
   fastify.post<{ Body: LoginBody }>(
-    "/api/loginSignup/login",
+    "/api/login-signup/login",
     {
       schema: {
         body: LoginBodySchema,
@@ -181,7 +181,7 @@ const loginSignup: FastifyPluginAsync = async (fastify) => {
   );
 
   // Logout route - clears the cookie
-  fastify.post("/api/loginSignup/logout", async (_request, reply) => {
+  fastify.post("/api/login-signup/logout", async (_request, reply) => {
     reply.clearCookie("token", {
       path: "/",
     });

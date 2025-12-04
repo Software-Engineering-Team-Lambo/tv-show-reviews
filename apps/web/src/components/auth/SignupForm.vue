@@ -128,10 +128,10 @@ defineExpose({
         </div>
 
         <div>
-            <label for="confirm-password" class="block text-sm font-medium mb-2">
+            <label for="signup-confirm-password" class="block text-sm font-medium mb-2">
                 Confirm Password
             </label>
-            <Password id="confirm-password" v-model="confirmPassword" placeholder="Confirm your password"
+            <Password id="signup-confirm-password" v-model="confirmPassword" placeholder="Confirm your password"
                 :feedback="false" toggleMask class="w-full" inputClass="w-full" />
         </div>
 

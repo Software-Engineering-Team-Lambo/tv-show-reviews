@@ -1,6 +1,6 @@
 import fp from "fastify-plugin";
-import { FastifyPluginAsync } from "fastify";
-import { PrismaClient } from "../../generated/prisma";
+import type { FastifyPluginAsync } from "fastify";
+import { PrismaClient } from "../../generated/prisma/index.js";
 
 // Use TypeScript module augmentation to declare the type of server.prisma to be PrismaClient
 declare module "fastify" {

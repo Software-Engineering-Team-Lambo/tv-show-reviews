@@ -1,5 +1,5 @@
-import { FastifyPluginAsync } from "fastify";
-import type { HomePageShow, HomePageResponse } from "../types/home-page";
+import type { FastifyPluginAsync } from "fastify";
+import type { HomePageShow, HomePageResponse } from "../types/home-page.js";
 
 const homePage: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
   fastify.get("/api/home-page", async function () {

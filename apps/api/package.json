@@ -1,10 +1,13 @@
 {
   "name": "api",
   "version": "1.0.0",
+  "type": "module",
   "description": "This project was bootstrapped with Fastify-CLI.",
   "main": "app.ts",
   "scripts": {
-    "test": "npm run build:ts && tsc -p test/tsconfig.json && c8 node --test -r ts-node/register \"test/**/*.ts\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "start": "npm run build:ts && fastify start -l info dist/app.js",
     "start:prod": "node dist/server.js",
     "build": "tsc",
@@ -45,6 +48,7 @@
     "@types/eslint__js": "^8.42.3",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.1.0",
+    "@vitest/coverage-v8": "^4.0.14",
     "c8": "^10.1.2",
     "concurrently": "^9.0.0",
     "eslint": "^9.38.0",
@@ -54,7 +58,8 @@
     "ts-node": "^10.4.0",
     "tsx": "^4.20.6",
     "typescript": "~5.8.2",
-    "typescript-eslint": "^8.46.2"
+    "typescript-eslint": "^8.46.2",
+    "vitest": "^4.0.14"
   },
   "directories": {
     "test": "test"

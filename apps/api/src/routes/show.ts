@@ -1,5 +1,6 @@
-import { FastifyPluginAsync } from "fastify";
-import { Type, Static } from "@sinclair/typebox";
+import type { FastifyPluginAsync } from "fastify";
+import { Type } from "@sinclair/typebox";
+import type { Static } from "@sinclair/typebox";
 
 const ParamsSchema = Type.Object({
   id: Type.String(),
