@@ -39,11 +39,11 @@ describe("Authentication Routes", () => {
     });
   });
 
-  describe("POST /api/loginSignup/signup", () => {
+  describe("POST /api/login-signup/signup", () => {
     it("should create a new user and set auth cookie", async () => {
       const response = await app.inject({
         method: "POST",
-        url: "/api/loginSignup/signup",
+        url: "/api/login-signup/signup",
         payload: testUser,
       });
 
@@ -66,14 +66,14 @@ describe("Authentication Routes", () => {
       // First signup
       await app.inject({
         method: "POST",
-        url: "/api/loginSignup/signup",
+        url: "/api/login-signup/signup",
         payload: testUser,
       });
 
       // Try to signup with same email
       const response = await app.inject({
         method: "POST",
-        url: "/api/loginSignup/signup",
+        url: "/api/login-signup/signup",
         payload: {
           username: "differentuser",
           email: testUser.email,
@@ -90,14 +90,14 @@ describe("Authentication Routes", () => {
       // First signup
       await app.inject({
         method: "POST",
-        url: "/api/loginSignup/signup",
+        url: "/api/login-signup/signup",
         payload: testUser,
       });
 
       // Try to signup with same username
       const response = await app.inject({
         method: "POST",
-        url: "/api/loginSignup/signup",
+        url: "/api/login-signup/signup",
         payload: {
           username: testUser.username,
           email: "different@example.com",
@@ -114,7 +114,7 @@ describe("Authentication Routes", () => {
     it("should reject username shorter than 4 characters", async () => {
       const response = await app.inject({
         method: "POST",
-        url: "/api/loginSignup/signup",
+        url: "/api/login-signup/signup",
         payload: {
           username: "abc",
           email: "test@example.com",
@@ -128,7 +128,7 @@ describe("Authentication Routes", () => {
     it("should reject username longer than 16 characters", async () => {
       const response = await app.inject({
         method: "POST",
-        url: "/api/loginSignup/signup",
+        url: "/api/login-signup/signup",
         payload: {
           username: "thisusernameiswaytoolong",
           email: "test@example.com",
@@ -142,7 +142,7 @@ describe("Authentication Routes", () => {
     it("should reject username with invalid characters", async () => {
       const response = await app.inject({
         method: "POST",
-        url: "/api/loginSignup/signup",
+        url: "/api/login-signup/signup",
         payload: {
           username: "user@name!",
           email: "test@example.com",
@@ -156,7 +156,7 @@ describe("Authentication Routes", () => {
     it("should reject invalid email format", async () => {
       const response = await app.inject({
         method: "POST",
-        url: "/api/loginSignup/signup",
+        url: "/api/login-signup/signup",
         payload: {
           username: "validuser",
           email: "notanemail",
@@ -170,7 +170,7 @@ describe("Authentication Routes", () => {
     it("should reject password shorter than 8 characters", async () => {
       const response = await app.inject({
         method: "POST",
-        url: "/api/loginSignup/signup",
+        url: "/api/login-signup/signup",
         payload: {
           username: "validuser",
           email: "test@example.com",
@@ -184,7 +184,7 @@ describe("Authentication Routes", () => {
     it("should reject missing required fields", async () => {
       const response = await app.inject({
         method: "POST",
-        url: "/api/loginSignup/signup",
+        url: "/api/login-signup/signup",
         payload: {
           username: "validuser",
           // missing email and password
@@ -195,12 +195,12 @@ describe("Authentication Routes", () => {
     });
   });
 
-  describe("POST /api/loginSignup/login", () => {
+  describe("POST /api/login-signup/login", () => {
     beforeEach(async () => {
       // Create a test user for login tests
       await app.inject({
         method: "POST",
-        url: "/api/loginSignup/signup",
+        url: "/api/login-signup/signup",
         payload: testUser,
       });
     });
@@ -208,7 +208,7 @@ describe("Authentication Routes", () => {
     it("should login with valid email and password", async () => {
       const response = await app.inject({
         method: "POST",
-        url: "/api/loginSignup/login",
+        url: "/api/login-signup/login",
         payload: {
           emailOrUsername: testUser.email,
           password: testUser.password,
@@ -239,7 +239,7 @@ describe("Authentication Routes", () => {
     it("should login with valid username and password", async () => {
       const response = await app.inject({
         method: "POST",
-        url: "/api/loginSignup/login",
+        url: "/api/login-signup/login",
         payload: {
           emailOrUsername: testUser.username,
           password: testUser.password,
@@ -255,7 +255,7 @@ describe("Authentication Routes", () => {
     it("should reject invalid password", async () => {
       const response = await app.inject({
         method: "POST",
-        url: "/api/loginSignup/login",
+        url: "/api/login-signup/login",
         payload: {
           emailOrUsername: testUser.email,
           password: "wrongpassword",
@@ -268,7 +268,7 @@ describe("Authentication Routes", () => {
     it("should reject non-existent user", async () => {
       const response = await app.inject({
         method: "POST",
-        url: "/api/loginSignup/login",
+        url: "/api/login-signup/login",
         payload: {
           emailOrUsername: "nonexistent@example.com",
           password: "password123",
@@ -281,7 +281,7 @@ describe("Authentication Routes", () => {
     it("should reject empty credentials", async () => {
       const response = await app.inject({
         method: "POST",
-        url: "/api/loginSignup/login",
+        url: "/api/login-signup/login",
         payload: {
           emailOrUsername: "",
           password: "",
@@ -292,12 +292,12 @@ describe("Authentication Routes", () => {
     });
   });
 
-  describe("POST /api/loginSignup/logout", () => {
+  describe("POST /api/login-signup/logout", () => {
     it("should clear the auth cookie", async () => {
       // First login to get a cookie
       const loginResponse = await app.inject({
         method: "POST",
-        url: "/api/loginSignup/signup",
+        url: "/api/login-signup/signup",
         payload: testUser,
       });
 
@@ -307,7 +307,7 @@ describe("Authentication Routes", () => {
       // Now logout
       const logoutResponse = await app.inject({
         method: "POST",
-        url: "/api/loginSignup/logout",
+        url: "/api/login-signup/logout",
         cookies: { token: tokenCookie!.value },
       });
 
@@ -333,7 +333,7 @@ describe("Authentication Routes", () => {
       // Signup to get token
       const signupResponse = await app.inject({
         method: "POST",
-        url: "/api/loginSignup/signup",
+        url: "/api/login-signup/signup",
         payload: testUser,
       });
 

@@ -24,7 +24,7 @@ describe("Review Routes", () => {
     // Create test user and get token
     const signupResponse = await app.inject({
       method: "POST",
-      url: "/api/loginSignup/signup",
+      url: "/api/login-signup/signup",
       payload: testUser,
     });
 

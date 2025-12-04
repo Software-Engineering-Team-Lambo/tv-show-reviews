@@ -36,7 +36,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function login(emailOrUsername: string, password: string) {
-    const response = await fetch('/api/loginSignup/login', {
+    const response = await fetch('/api/login-signup/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -56,7 +56,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function signup(username: string, email: string, password: string) {
-    const response = await fetch('/api/loginSignup/signup', {
+    const response = await fetch('/api/login-signup/signup', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -77,7 +77,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function logout() {
     try {
-      await fetch('/api/loginSignup/logout', {
+      await fetch('/api/login-signup/logout', {
         method: 'POST',
         credentials: 'include', // Important: send cookies
       })
