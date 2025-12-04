@@ -1,4 +1,4 @@
-import { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
 import { Static, Type } from "@sinclair/typebox";
 import { Prisma } from "../../generated/prisma/index.js";
 import {

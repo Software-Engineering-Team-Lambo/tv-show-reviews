@@ -1,4 +1,4 @@
-import { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
 import { Type, Static } from "@sinclair/typebox";
 
 // Schema for creating/updating a review
@@ -120,11 +120,9 @@ const reviewRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
       });
 
       if (existingReview) {
-        return reply
-          .status(400)
-          .send({
-            error: "You have already reviewed this show. Use PUT to update.",
-          });
+        return reply.status(400).send({
+          error: "You have already reviewed this show. Use PUT to update.",
+        });
       }
 
       const review = await fastify.prisma.review.create({

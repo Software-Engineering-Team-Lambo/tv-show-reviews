@@ -1,4 +1,4 @@
-import { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
 import { Type, Static } from "@sinclair/typebox";
 
 // Schema for adding to watchlist
@@ -74,11 +74,9 @@ const watchlistRoutes: FastifyPluginAsync = async (fastify): Promise<void> => {
       try {
         await request.jwtVerify();
       } catch {
-        return reply
-          .status(401)
-          .send({
-            error: "You must be logged in to remove from your watchlist",
-          });
+        return reply.status(401).send({
+          error: "You must be logged in to remove from your watchlist",
+        });
       }
 
       const userId = (request.user as { userId: number }).userId;

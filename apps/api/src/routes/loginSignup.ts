@@ -1,4 +1,4 @@
-import { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync } from "fastify";
 import { Static, Type } from "@sinclair/typebox";
 import argon2 from "argon2";
 
