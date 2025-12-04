@@ -15,6 +15,12 @@ if (fs.existsSync(envTestPath)) {
 }
 
 export default async function globalSetup() {
+  // Skip database reset if SKIP_DB_RESET is set (useful for faster local development)
+  if (process.env.SKIP_DB_RESET === "true") {
+    console.log("⏭️  Skipping database reset (SKIP_DB_RESET=true)");
+    return;
+  }
+
   console.log("🧹 Setting up test database...");
 
   const cwd = path.join(__dirname, "..");
