@@ -88,6 +88,7 @@ jobs:
 
   e2e-test:
     runs-on: ubuntu-latest
+    needs: test # Run E2E tests only after integration tests pass
 
     services:
       mysql:

@@ -15,7 +15,7 @@ export default defineConfig({
   /* Opt out of parallel tests on CI */
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use */
-  reporter: process.env.CI ? 'github' : 'html',
+  reporter: process.env.CI ? 'github' : [['html', { open: 'never' }]],
   /* Shared settings for all the projects below */
   use: {
     /* Base URL to use in actions like `await page.goto('/')` */
