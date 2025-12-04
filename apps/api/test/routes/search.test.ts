@@ -21,7 +21,7 @@ describe("POST /api/search", () => {
     await prisma.$disconnect();
   });
 
-  it("should return results when searching by show title", async () => {
+  it("should return results with pagination when searching by show title", async () => {
     // Use part of the actual show title
     const searchTerm = sampleShow.title.split(" ")[0];
 
@@ -33,8 +33,14 @@ describe("POST /api/search", () => {
 
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.payload);
-    expect(Array.isArray(body)).toBe(true);
-    expect(body.length).toBeGreaterThan(0);
+    expect(body).toHaveProperty("results");
+    expect(body).toHaveProperty("pagination");
+    expect(Array.isArray(body.results)).toBe(true);
+    expect(body.results.length).toBeGreaterThan(0);
+    expect(body.pagination).toHaveProperty("page");
+    expect(body.pagination).toHaveProperty("totalCount");
+    expect(body.pagination).toHaveProperty("totalPages");
+    expect(body.pagination).toHaveProperty("hasMore");
   });
 
   it("should return empty results for non-matching query", async () => {
@@ -46,7 +52,8 @@ describe("POST /api/search", () => {
 
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.payload);
-    expect(body).toHaveLength(0);
+    expect(body.results).toHaveLength(0);
+    expect(body.pagination.totalCount).toBe(0);
   });
 
   it("should return all shows when no query provided", async () => {
@@ -58,8 +65,8 @@ describe("POST /api/search", () => {
 
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.payload);
-    expect(Array.isArray(body)).toBe(true);
-    expect(body.length).toBeGreaterThan(0);
+    expect(Array.isArray(body.results)).toBe(true);
+    expect(body.results.length).toBeGreaterThan(0);
   });
 
   it("should include genres in results", async () => {
@@ -71,9 +78,9 @@ describe("POST /api/search", () => {
 
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.payload);
-    expect(body.length).toBeGreaterThan(0);
-    expect(body[0]).toHaveProperty("genres");
-    expect(Array.isArray(body[0].genres)).toBe(true);
+    expect(body.results.length).toBeGreaterThan(0);
+    expect(body.results[0]).toHaveProperty("genres");
+    expect(Array.isArray(body.results[0].genres)).toBe(true);
   });
 
   it("should search by actor name", async () => {
@@ -99,7 +106,7 @@ describe("POST /api/search", () => {
 
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.payload);
-    expect(body.length).toBeGreaterThan(0);
+    expect(body.results.length).toBeGreaterThan(0);
   });
 
   it("should search by creator name", async () => {
@@ -125,7 +132,7 @@ describe("POST /api/search", () => {
 
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.payload);
-    expect(body.length).toBeGreaterThan(0);
+    expect(body.results.length).toBeGreaterThan(0);
   });
 
   it("should return show with required fields", async () => {
@@ -138,7 +145,7 @@ describe("POST /api/search", () => {
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.payload);
 
-    const result = body[0];
+    const result = body.results[0];
     expect(result).toHaveProperty("id");
     expect(result).toHaveProperty("title");
     expect(result).toHaveProperty("posterPath");
@@ -170,11 +177,37 @@ describe("POST /api/search", () => {
 
     expect(response.statusCode).toBe(200);
     const body = JSON.parse(response.payload);
-    expect(body.length).toBeGreaterThan(0);
+    expect(body.results.length).toBeGreaterThan(0);
     // All results should have this genre
-    body.forEach((show: { genres: string[] }) => {
+    body.results.forEach((show: { genres: string[] }) => {
       expect(show.genres).toContain(genre.name);
     });
+  });
+
+  it("should support pagination with page and limit", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/search",
+      payload: { page: 1, limit: 5 },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.payload);
+    expect(body.results.length).toBeLessThanOrEqual(5);
+    expect(body.pagination.page).toBe(1);
+    expect(body.pagination.limit).toBe(5);
+  });
+
+  it("should support sorting by different fields", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/search",
+      payload: { sortBy: "title" },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = JSON.parse(response.payload);
+    expect(body.results.length).toBeGreaterThan(0);
   });
 });
 

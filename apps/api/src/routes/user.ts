@@ -10,7 +10,7 @@ import {
   type WatchlistWithShow,
   createPaginationInfo,
   toPublicWatchlist,
-} from "../types/user-profile.js";
+} from "../types/user-profile.ts";
 
 // Pagination query schema
 const PaginationQuerySchema = Type.Object({
