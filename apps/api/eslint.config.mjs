@@ -38,6 +38,7 @@ export default tseslint.config(
       "prisma/**",
       "*.js",
       "*.mjs",
+      "vitest.config.ts",
     ],
   }
 );
