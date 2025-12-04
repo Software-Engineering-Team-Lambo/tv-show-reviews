@@ -1,15 +1,15 @@
 import type { FastifyPluginAsync } from "fastify";
-import { Static, Type } from "@sinclair/typebox";
+import { type Static, Type } from "@sinclair/typebox";
 import { Prisma } from "../../generated/prisma/index.js";
 import {
-  ProfileTab,
-  ProfileUser,
-  ProfileResponse,
-  ReviewWithShow,
-  FavoriteWithShow,
-  WatchlistWithShow,
+  type ProfileTab,
+  type ProfileUser,
+  type ProfileResponse,
+  type ReviewWithShow,
+  type FavoriteWithShow,
+  type WatchlistWithShow,
   createPaginationInfo,
-} from "../types/types-profile.js";
+} from "../types/types-profile.ts";
 
 // Define the profile update request schema
 const UpdateUsernameSchema = Type.Object({

@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
-import { Type, Static } from "@sinclair/typebox";
+import { Type, type Static } from "@sinclair/typebox";
 
 // Schema for adding to watchlist
 const WatchlistBodySchema = Type.Object({
