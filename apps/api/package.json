@@ -27,20 +27,26 @@
   "license": "ISC",
   "dependencies": {
     "@fastify/autoload": "^6.0.0",
+    "@fastify/cookie": "^11.0.2",
     "@fastify/cors": "^11.1.0",
+    "@fastify/jwt": "^10.0.0",
     "@fastify/sensible": "^6.0.0",
     "@fastify/type-provider-typebox": "^6.1.0",
     "@prisma/client": "^6.17.1",
     "@sinclair/typebox": "^0.34.41",
     "ajv": "^6.12.6",
+    "ajv-formats": "^3.0.1",
+    "argon2": "^0.44.0",
     "dotenv": "^17.2.3",
     "fastify": "^5.0.0",
     "fastify-cli": "^7.4.0",
-    "fastify-plugin": "^5.0.0"
+    "fastify-plugin": "^5.0.0",
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
     "@types/eslint__js": "^8.42.3",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^22.1.0",
     "@vitest/coverage-v8": "^4.0.14",
     "c8": "^10.1.2",

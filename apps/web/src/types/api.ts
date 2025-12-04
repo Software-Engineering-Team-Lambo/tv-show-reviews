@@ -51,12 +51,70 @@ export interface Review {
   likes?: number
 }
 
+// Profile-related types
+export interface ProfileShowSummary {
+  id: number
+  title: string
+  posterPath: string | null
+}
+
+export interface ProfileReview {
+  id: number
+  rating: number
+  comment: string | null
+  createdAt: string
+  updatedAt: string
+  show: ProfileShowSummary
+}
+
+export interface ProfileFavorite {
+  id: number
+  createdAt: string
+  show: ProfileShowSummary
+}
+
+export interface ProfileWatchlistItem {
+  id: number
+  addedAt: string
+  note: string | null
+  show: ProfileShowSummary
+}
+
+export interface UserProfile {
+  id: number
+  username: string
+  email: string
+  createdAt: string
+  reviews: ProfileReview[]
+  favorites: ProfileFavorite[]
+  watchlist: ProfileWatchlistItem[]
+}
+
+export interface ProfilePagination {
+  reviews: PaginationInfo
+  favorites: PaginationInfo
+  watchlist: PaginationInfo
+}
+
+export interface ProfileResponse {
+  user: UserProfile
+  pagination: ProfilePagination
+}
+
+export interface ProfileStats {
+  reviewsCount: number
+  favoritesCount: number
+  watchlistCount: number
+}
+
 // Search API types
 export interface SearchRequestBody {
   query?: string
   genres?: string[]
   year?: number
   sortBy?: 'rating' | 'reviews' | 'year' | 'title'
+  page?: number
+  limit?: number
 }
 
 export interface SearchResult {
@@ -70,6 +128,11 @@ export interface SearchResult {
   createdAt: string
   updatedAt: string
   posterPath: string | null
+}
+
+export interface PaginatedSearchResponse {
+  results: SearchResult[]
+  pagination: PaginationInfo
 }
 
 export interface HomePageShow {
@@ -111,6 +174,35 @@ export interface ShowWithDetails {
   averageRating: number
   reviewCount: number
   reviews: Review[]
+  userStatus: UserShowStatus
+}
+
+// User's relationship to a show
+export interface UserShowStatus {
+  isFavorite: boolean
+  inWatchlist: boolean
+  watchlistNote: string | null
+  userReview: UserReviewSummary | null
+}
+
+export interface UserReviewSummary {
+  id: number
+  rating: number
+  comment: string | null
+}
+
+// Pagination types
+export interface PaginationInfo {
+  page: number
+  limit: number
+  totalCount: number
+  totalPages: number
+  hasMore: boolean
+}
+
+export interface PaginatedReviewsResponse {
+  reviews: Review[]
+  pagination: PaginationInfo
 }
 
 // Type for display in cards and lists

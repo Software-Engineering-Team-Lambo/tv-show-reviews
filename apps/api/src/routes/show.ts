@@ -25,27 +25,59 @@ const showRoute: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
         return;
       }
 
+      // Try to get user ID from JWT (optional - don't fail if not authenticated)
+      let userId: number | null = null;
+      try {
+        await request.jwtVerify();
+        userId = (request.user as { userId: number }).userId;
+      } catch {
+        // User is not authenticated, that's fine
+      }
+
       // Fetch show data and calculate ratings in parallel
-      const [show, ratingStats] = await Promise.all([
-        fastify.prisma.show.findUnique({
-          where: { id },
-          include: {
-            genres: { include: { genre: true } },
-            creators: { include: { creator: true } },
-            cast: {
-              include: { actor: true },
-              orderBy: { order: "asc" },
-              take: 15,
+      const [show, ratingStats, userFavorite, userWatchlist, userReview] =
+        await Promise.all([
+          fastify.prisma.show.findUnique({
+            where: { id },
+            include: {
+              genres: { include: { genre: true } },
+              creators: { include: { creator: true } },
+              cast: {
+                include: { actor: true },
+                orderBy: { order: "asc" },
+                take: 15,
+              },
+              reviews: {
+                include: { user: { select: { id: true, username: true } } },
+                orderBy: { createdAt: "desc" },
+                take: 10, // Only get first page of reviews
+              },
             },
-            reviews: { include: { user: true } },
-          },
-        }),
-        fastify.prisma.review.aggregate({
-          where: { showId: id },
-          _avg: { rating: true },
-          _count: true,
-        }),
-      ]);
+          }),
+          fastify.prisma.review.aggregate({
+            where: { showId: id },
+            _avg: { rating: true },
+            _count: true,
+          }),
+          // Check if user has favorited this show
+          userId
+            ? fastify.prisma.favorite.findUnique({
+                where: { userId_showId: { userId, showId: id } },
+              })
+            : null,
+          // Check if user has this show in watchlist
+          userId
+            ? fastify.prisma.watchlist.findUnique({
+                where: { userId_showId: { userId, showId: id } },
+              })
+            : null,
+          // Get user's own review if exists
+          userId
+            ? fastify.prisma.review.findUnique({
+                where: { userId_showId: { userId, showId: id } },
+              })
+            : null,
+        ]);
 
       if (!show) {
         reply.code(404).send({ error: "Show not found" });
@@ -77,7 +109,7 @@ const showRoute: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
         reviews: show.reviews.map((r) => ({
           id: r.id,
           userId: r.userId,
-          username: r.user?.name ?? `user_${r.userId}`,
+          username: r.user?.username ?? `user_${r.userId}`,
           rating: r.rating,
           comment: r.comment ?? null,
           reviewText: r.comment ?? null,
@@ -87,6 +119,19 @@ const showRoute: FastifyPluginAsync = async (fastify, _opts): Promise<void> => {
           showId: show.id,
           likes: 0,
         })),
+        // User-specific data
+        userStatus: {
+          isFavorite: !!userFavorite,
+          inWatchlist: !!userWatchlist,
+          watchlistNote: userWatchlist?.note ?? null,
+          userReview: userReview
+            ? {
+                id: userReview.id,
+                rating: userReview.rating,
+                comment: userReview.comment,
+              }
+            : null,
+        },
       };
 
       reply.send(transformed);

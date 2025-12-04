@@ -3,11 +3,12 @@ import { ref, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import Card from 'primevue/card'
 import Skeleton from 'primevue/skeleton'
+import Button from 'primevue/button'
 import SearchHeader from '@/components/SearchHeader.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import SearchFilters from '@/components/SearchFilters.vue'
 import SearchResults from '@/components/SearchResults.vue'
-import type { ShowCardData, SearchRequestBody, SearchResult, FilterOptions } from '@/types/api'
+import type { ShowCardData, SearchRequestBody, PaginatedSearchResponse, FilterOptions, PaginationInfo } from '@/types/api'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,6 +18,7 @@ const selectedGenres = ref<string[]>([])
 const selectedYear = ref<string | null>(null)
 const sortBy = ref<'rating' | 'reviews' | 'year' | 'title'>('rating')
 const isLoading = ref(false)
+const isLoadingMore = ref(false)
 const isLoadingFilters = ref(true)
 const hasSearched = ref(false)
 
@@ -30,6 +32,7 @@ const sortOptions = ref([
 ])
 
 const searchResults = ref<ShowCardData[]>([])
+const pagination = ref<PaginationInfo | null>(null)
 
 // Watch for route query changes (when searching from header or back/forward nav)
 watch(() => route.query.q, (newQuery) => {
@@ -53,10 +56,8 @@ onMounted(async () => {
         selectedGenres.value = [route.query.genre as string]
     }
 
-    // Auto-search if we have query params
-    if (route.query.q || route.query.genre) {
-        handleSearch()
-    }
+    // Always search on mount (will return sorted results even without query)
+    handleSearch()
 })
 
 const loadFilters = async () => {
@@ -73,35 +74,35 @@ const loadFilters = async () => {
     }
 }
 
-const handleSearch = async () => {
-    // Allow search with just filters (no text required)
-    const hasQuery = searchQuery.value.trim().length > 0
-    const hasFilters = selectedGenres.value.length > 0 || selectedYear.value !== null
-
-    // Require at least a query or filters
-    if (!hasQuery && !hasFilters) {
+const handleSearch = async (page = 1) => {
+    if (page === 1) {
+        isLoading.value = true
         searchResults.value = []
-        hasSearched.value = false
-        return
+    } else {
+        isLoadingMore.value = true
     }
-
-    // Update URL query params
-    const query = searchQuery.value.trim()
-    router.push({
-        name: 'search',
-        query: query ? { q: query } : {}
-    })
-
-    isLoading.value = true
     hasSearched.value = true
+
+    // Update URL query params (only on first page)
+    if (page === 1) {
+        const query = searchQuery.value.trim()
+        router.push({
+            name: 'search',
+            query: query ? { q: query } : {}
+        })
+    }
 
     try {
         // Build the request body with all filters
-        const requestBody: SearchRequestBody = {}
+        const requestBody: SearchRequestBody = {
+            page,
+            limit: 20,
+        }
 
         // Add query if provided
-        if (hasQuery) {
-            requestBody.query = searchQuery.value
+        const query = searchQuery.value.trim()
+        if (query) {
+            requestBody.query = query
         }
 
         // Add optional filters if they have values
@@ -127,10 +128,10 @@ const handleSearch = async () => {
             throw new Error(`Search failed: ${response.statusText}`)
         }
 
-        const data: SearchResult[] = await response.json()
+        const data: PaginatedSearchResponse = await response.json()
 
         // Map the API response to ShowCardData format
-        searchResults.value = data.map((show) => ({
+        const newResults = data.results.map((show) => ({
             id: show.id,
             title: show.title,
             year: show.releaseDate ? new Date(show.releaseDate).getFullYear() : null,
@@ -140,11 +141,27 @@ const handleSearch = async () => {
             reviews: show.reviewCount,
             genre: show.genres,
         }))
+
+        if (page === 1) {
+            searchResults.value = newResults
+        } else {
+            searchResults.value = [...searchResults.value, ...newResults]
+        }
+        pagination.value = data.pagination
     } catch (error) {
         console.error('Search failed:', error)
-        searchResults.value = []
+        if (page === 1) {
+            searchResults.value = []
+        }
     } finally {
         isLoading.value = false
+        isLoadingMore.value = false
+    }
+}
+
+const loadMore = () => {
+    if (pagination.value?.hasMore) {
+        handleSearch(pagination.value.page + 1)
     }
 }
 
@@ -154,22 +171,13 @@ const clearFilters = () => {
     selectedYear.value = null
     sortBy.value = 'rating'
     searchResults.value = []
+    pagination.value = null
     hasSearched.value = false
 }
 
 // Watch for filter changes and auto-search
 watch([selectedGenres, selectedYear, sortBy], () => {
-    const hasQuery = searchQuery.value.trim().length > 0
-    const hasFilters = selectedGenres.value.length > 0 || selectedYear.value !== null
-
-    // If we have either query or filters, search immediately
-    if (hasQuery || hasFilters) {
-        handleSearch()
-    } else if (hasSearched.value) {
-        // If all filters cleared and no query, clear results
-        searchResults.value = []
-        hasSearched.value = false
-    }
+    handleSearch()
 })
 </script>
 
@@ -177,14 +185,14 @@ watch([selectedGenres, selectedYear, sortBy], () => {
     <div class="min-h-screen bg-gray-50 dark:bg-gray-900 py-8">
         <div class="container mx-auto px-4">
             <!-- Page Header -->
-            <SearchHeader :result-count="searchResults.length" :loading="isLoading" />
+            <SearchHeader :result-count="pagination?.totalCount ?? searchResults.length" :loading="isLoading" />
 
             <!-- Search and Filters -->
             <Card class="mb-8">
                 <template #content>
                     <div class="space-y-4">
                         <!-- Search Bar -->
-                        <SearchBar v-model="searchQuery" @search="handleSearch" />
+                        <SearchBar v-model="searchQuery" @search="handleSearch(1)" />
 
                         <!-- Filters -->
                         <div v-if="isLoadingFilters" class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -202,6 +210,18 @@ watch([selectedGenres, selectedYear, sortBy], () => {
 
             <!-- Search Results with Loading & Empty States -->
             <SearchResults :shows="searchResults" :loading="isLoading" />
+
+            <!-- Load More Button -->
+            <div v-if="pagination?.hasMore && !isLoading" class="text-center mt-8">
+                <Button label="Load More Shows" icon="pi pi-chevron-down" severity="secondary" outlined
+                    :loading="isLoadingMore" @click="loadMore" />
+            </div>
+
+            <!-- Showing X of Y -->
+            <div v-if="pagination && searchResults.length > 0"
+                class="text-center mt-4 text-gray-500 dark:text-gray-400">
+                Showing {{ searchResults.length }} of {{ pagination.totalCount }} shows
+            </div>
         </div>
     </div>
 </template>
