@@ -156,6 +156,9 @@ test.describe('Auth - Signup Validation', () => {
     await page.getByLabel('Email').fill('notanemail')
     await page.locator('#signup-password input').fill('Password123!')
     await page.locator('#signup-confirm-password input').fill('Password123!')
+
+    // disable browser input validation
+    await page.$eval('form', (form) => (form.noValidate = true))
     await page.getByRole('button', { name: 'Create Account' }).click({ force: true })
 
     // Should show validation error

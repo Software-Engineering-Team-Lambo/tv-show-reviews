@@ -250,31 +250,24 @@ test.describe('Reviews Feature', () => {
     // Look for rating slider/stars and comment textarea
 
     // Click 4th star (rating 4)
-    // Scope to the last rating component (the one in the form)
-    await page
-      .locator('[data-pc-name="rating"]')
-      .last()
-      .locator('[data-pc-section="item"]')
-      .nth(3)
-      .click({ force: true })
+    // Scope to the rating component within the review form section (contains "Your Rating" label)
+    const reviewFormSection = page.locator('text=Your Rating').locator('..')
+    const rating = reviewFormSection.locator('.p-rating')
+    await rating.locator('.p-rating-option').nth(3).click()
 
     const textarea = page.locator('textarea')
-    if (await textarea.isVisible()) {
-      await textarea.fill('This is a great show! Highly recommend watching it.')
-    }
+    await textarea.fill('This is a great show! Highly recommend watching it.')
 
     // Find and click submit button
-    const submitBtn = page.getByRole('button', { name: /submit|post/i })
-    if (await submitBtn.isVisible()) {
-      await submitBtn.click()
+    const submitBtn = page.getByRole('button', { name: 'Submit Review' })
+    await submitBtn.click()
 
-      // Review should appear in the list
-      await expect(
-        page.getByText('This is a great show! Highly recommend watching it.'),
-      ).toBeVisible({
-        timeout: 10000,
-      })
-    }
+    // Review should appear in the list
+    await expect(
+      page.getByText('This is a great show! Highly recommend watching it.').last(),
+    ).toBeVisible({
+      timeout: 10000,
+    })
   })
 
   test('should show existing reviews on show page', async ({ page }) => {
