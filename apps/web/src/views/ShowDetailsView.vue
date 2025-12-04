@@ -230,6 +230,16 @@ const submitReview = async (rating: number, comment: string) => {
         if (reviewPagination.value) {
             reviewPagination.value.totalCount++
         }
+        // Update show stats
+        if (show.value) {
+            show.value.reviewCount++
+            // Recalculate average: (oldAvg * oldCount + newRating) / newCount
+            const oldCount = show.value.reviewCount - 1
+            const oldAvg = show.value.averageRating ?? 0
+            show.value.averageRating = oldCount === 0
+                ? rating
+                : (oldAvg * oldCount + rating) / show.value.reviewCount
+        }
     } catch (err) {
         console.error(err)
     } finally {
@@ -261,10 +271,18 @@ const updateReview = async (reviewId: number, rating: number, comment: string) =
         const updatedReview = await res.json()
         // Update in reviews list
         const index = reviews.value.findIndex((r) => r.id === reviewId)
+        const oldRating = index !== -1 ? reviews.value[index]?.rating ?? null : null
         if (index !== -1) {
             reviews.value[index] = updatedReview
         }
         userReview.value = { id: updatedReview.id, rating: updatedReview.rating, comment: updatedReview.comment }
+        // Update average rating if rating changed
+        if (show.value && oldRating !== null && oldRating !== rating) {
+            const count = show.value.reviewCount
+            const oldAvg = show.value.averageRating ?? 0
+            // Remove old rating and add new: (oldAvg * count - oldRating + newRating) / count
+            show.value.averageRating = (oldAvg * count - oldRating + rating) / count
+        }
     } catch (err) {
         console.error(err)
     } finally {
@@ -285,11 +303,25 @@ const deleteReview = async (reviewId: number) => {
             throw new Error(errorData.error || 'Failed to delete review')
         }
 
+        // Find the review to get its rating before removing
+        const deletedReview = reviews.value.find((r) => r.id === reviewId)
+        const deletedRating = deletedReview?.rating ?? 0
+
         // Remove from reviews list
         reviews.value = reviews.value.filter((r) => r.id !== reviewId)
         userReview.value = null
         if (reviewPagination.value) {
             reviewPagination.value.totalCount--
+        }
+        // Update show stats
+        if (show.value) {
+            const oldCount = show.value.reviewCount
+            const oldAvg = show.value.averageRating ?? 0
+            show.value.reviewCount--
+            // Recalculate average: (oldAvg * oldCount - deletedRating) / newCount
+            show.value.averageRating = show.value.reviewCount === 0
+                ? 0
+                : (oldAvg * oldCount - deletedRating) / show.value.reviewCount
         }
     } catch (err) {
         console.error(err)
