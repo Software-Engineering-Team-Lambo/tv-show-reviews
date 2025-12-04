@@ -38,6 +38,11 @@ watch(() => props.existingReview, (newReview, oldReview) => {
         if (oldReview && oldReview.id === newReview.id && isEditing.value) {
             isEditing.value = false
         }
+    } else {
+        // Review was deleted - reset form
+        userRating.value = 0
+        userReview.value = ''
+        isEditing.value = false
     }
 }, { immediate: true })
 
