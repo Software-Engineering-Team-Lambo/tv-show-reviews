@@ -78,9 +78,11 @@ const responsiveOptions = ref([
 <template>
   <div class="min-h-screen bg-gray-50 dark:bg-gray-900">
     <!-- Hero Section -->
-    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-16">
+    <div class="text-white py-16" style="background: linear-gradient(to right, #de2886, #f77b29);">
       <div class="container mx-auto px-4">
-        <h1 class="text-5xl font-bold mb-4">Welcome to Couch Critics! 🛋️</h1>
+        <h1 class="text-5xl font-bold mb-4">
+          <span class="couch-critics-brand" style="color:#ffffff">Welcome to Couch Critics!</span>
+        </h1>
         <p class="text-xl mb-6">
           Discover, review, and discuss your favorite TV shows with the community
         </p>
