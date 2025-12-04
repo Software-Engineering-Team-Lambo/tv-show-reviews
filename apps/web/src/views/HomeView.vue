@@ -81,8 +81,7 @@ const responsiveOptions = ref([
     <div class="text-white py-16" style="background: linear-gradient(to right, #de2886, #f77b29);">
       <div class="container mx-auto px-4">
         <h1 class="text-5xl font-bold mb-4">
-          Welcome to <span class="couch-critics-brand"><span style="color:#ffffff">Couch</span> <span
-              style="color:#ffffff">Critics</span></span>!
+          <span class="couch-critics-brand" style="color:#ffffff">Welcome to Couch Critics!</span>
         </h1>
         <p class="text-xl mb-6">
           Discover, review, and discuss your favorite TV shows with the community
