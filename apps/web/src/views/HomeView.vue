@@ -81,7 +81,8 @@ const responsiveOptions = ref([
     <div class="text-white py-16" style="background: linear-gradient(to right, #de2886, #f77b29);">
       <div class="container mx-auto px-4">
         <h1 class="text-5xl font-bold mb-4">
-          <img src="/couchcritics.png" alt="Couch Critics logo" class="inline-block w-50 h-50 mr-3 align-middle" />
+          <img src="/couchcritics.png" alt="Couch Critics logo"
+            class="inline-block w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 mr-3 align-middle object-contain" />
           Welcome to <span class="couch-critics-brand"><span style="color:#ffffff">Couch</span> <span
               style="color:#ffffff">Critics</span></span>!
         </h1>

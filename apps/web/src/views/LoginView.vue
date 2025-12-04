@@ -61,7 +61,7 @@ const handleForgotPassword = (email: string) => {
                 <router-link to="/" class="inline-block hover:opacity-80 transition-opacity">
                     <h1 class="text-5xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
                         <img src="/couchcritics.png" alt="Couch Critics logo"
-                            class="inline-block w-30 h-30 mr-3 align-middle" />
+                            class="inline-block w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 mr-3 align-middle object-contain" />
                         <span class="couch-critics-brand"><span style="color:#de2886">Couch</span> <span
                                 style="color:#f77b29">Critics</span></span>
                     </h1>
