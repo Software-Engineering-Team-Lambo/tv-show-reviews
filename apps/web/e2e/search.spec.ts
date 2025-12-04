@@ -43,12 +43,12 @@ test.describe('Search Page', () => {
       .nth(1)
       .click()
 
-    // Wait for results or empty state
-    await page.waitForTimeout(2000)
+    // Wait for results - should show either results with View Details buttons or a no results message
+    const viewDetailsBtn = page.getByRole('button', { name: /view details/i }).first()
+    const noResults = page.getByText(/no (shows|results) found/i)
 
-    // Page should have search results or show "No results" message
-    const mainContent = page.locator('.container').first()
-    await expect(mainContent).toBeVisible()
+    // One of these should be visible
+    await expect(viewDetailsBtn.or(noResults)).toBeVisible({ timeout: 15000 })
   })
 
   test('should navigate to show details when clicking a result', async ({ page }) => {

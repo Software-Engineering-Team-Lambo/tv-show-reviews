@@ -28,18 +28,6 @@ async function signupUser(page: Page, user: { username: string; email: string; p
   await page.getByRole('button', { name: 'Create Account' }).click()
 }
 
-// Helper to fill and submit login form
-async function loginUser(page: Page, emailOrUsername: string, password: string) {
-  await page.goto('/login')
-
-  // Fill in login form
-  await page.getByLabel('Email or Username').fill(emailOrUsername)
-  await page.locator('#login-password input').fill(password)
-
-  // Submit form
-  await page.locator('form').getByRole('button', { name: 'Login' }).click()
-}
-
 test.describe('Auth - Login Page', () => {
   test('should display login form by default', async ({ page }) => {
     await page.goto('/login')
@@ -196,6 +184,11 @@ test.describe('Auth - Signup Flow', () => {
 
     // Should redirect to home page after successful signup
     await expect(page).toHaveURL('/', { timeout: 10000 })
+
+    // Verify user is actually logged in by checking username appears in header
+    await expect(page.getByRole('button', { name: testUser.username })).toBeVisible({
+      timeout: 10000,
+    })
   })
 
   test('should show error when email already exists', async ({ page }) => {
@@ -242,6 +235,11 @@ test.describe('Auth - Login Flow', () => {
 
     // Should redirect to home page
     await expect(page).toHaveURL('/', { timeout: 10000 })
+
+    // Verify user is actually logged in by checking username appears in header
+    await expect(page.getByRole('button', { name: testUser.username })).toBeVisible({
+      timeout: 10000,
+    })
   })
 
   test('should successfully login with username', async ({ page }) => {
@@ -262,6 +260,11 @@ test.describe('Auth - Login Flow', () => {
 
     // Should redirect to home page
     await expect(page).toHaveURL('/', { timeout: 10000 })
+
+    // Verify user is actually logged in by checking username appears in header
+    await expect(page.getByRole('button', { name: testUser.username })).toBeVisible({
+      timeout: 10000,
+    })
   })
 })
 

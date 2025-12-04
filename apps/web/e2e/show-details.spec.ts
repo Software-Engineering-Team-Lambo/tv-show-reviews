@@ -34,12 +34,17 @@ test.describe('Show Details Page', () => {
     await viewDetailsBtn.waitFor({ state: 'visible', timeout: 30000 })
     await viewDetailsBtn.click()
 
-    // Wait for content to load - page should have meaningful content
-    await page.waitForTimeout(2000)
+    // Wait for show details page to load by checking for a specific element
+    await expect(page).toHaveURL(/\/show\/\d+/)
 
-    const pageContent = await page.locator('body').textContent()
-    // Should have substantive content (description, genres, etc.)
-    expect(pageContent?.length).toBeGreaterThan(100)
+    // Should have show title visible
+    await expect(page.locator('h1, h2, h3').first()).toBeVisible({ timeout: 15000 })
+
+    // Should have descriptive content - look for common show detail elements
+    // Shows typically have status, seasons info, or description text
+    await expect(
+      page.getByText(/seasons?|episodes?|status|overview|description/i).first(),
+    ).toBeVisible({ timeout: 10000 })
   })
 
   test('should display reviews section', async ({ page }) => {
@@ -86,11 +91,8 @@ test.describe('Show Details Page', () => {
   test('should handle invalid show ID gracefully', async ({ page }) => {
     await page.goto('/show/999999999')
 
-    // Wait for error state
-    await page.waitForTimeout(3000)
-
-    // Should show error message
-    await expect(page.getByText(/error|failed|not found/i).first()).toBeVisible({ timeout: 10000 })
+    // Should show error message (wait for API response)
+    await expect(page.getByText(/error|failed|not found/i).first()).toBeVisible({ timeout: 15000 })
   })
 
   test('should display genre chips or show info', async ({ page }) => {
@@ -99,14 +101,15 @@ test.describe('Show Details Page', () => {
     await viewDetailsBtn.waitFor({ state: 'visible', timeout: 30000 })
     await viewDetailsBtn.click()
 
-    // Wait for content to load
-    await page.waitForTimeout(2000)
+    // Wait for show page to fully load
+    await expect(page).toHaveURL(/\/show\/\d+/)
+    await expect(page.locator('h1, h2, h3').first()).toBeVisible({ timeout: 15000 })
 
     // Shows should have at least one Chip component (for year, seasons, status, or genres)
-    // or have substantive content indicating show details loaded
     const chips = page.locator('[data-pc-name="chip"]')
-    const chipCount = await chips.count()
+    await expect(chips.first()).toBeVisible({ timeout: 10000 })
 
+    const chipCount = await chips.count()
     // Should have at least year/seasons/status chips even if no genre tags
     expect(chipCount).toBeGreaterThan(0)
   })

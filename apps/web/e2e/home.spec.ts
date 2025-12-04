@@ -49,15 +49,20 @@ test.describe('Home Page', () => {
       timeout: 15000,
     })
 
-    // Click any genre button
+    // Get the genre name before clicking
     const genreButton = page.getByRole('button', { name: /drama|comedy|action|crime/i }).first()
     await genreButton.waitFor({ state: 'visible', timeout: 15000 })
+    const genreName = await genreButton.textContent()
+
     await genreButton.click()
 
     // Should navigate to search page
-    // grenre param is removed from the URL when the search page loads
-    // so just check we are on /search
     await expect(page).toHaveURL(/.*search/)
+
+    // Verify the genre filter is applied - genre should appear in the multiselect
+    if (genreName) {
+      await expect(page.getByText(genreName.trim()).first()).toBeVisible({ timeout: 10000 })
+    }
   })
 
   test('should navigate to show details when clicking View Details', async ({ page }) => {
@@ -88,5 +93,10 @@ test.describe('Home Page', () => {
 
     // Should navigate to search page with query
     await expect(page).toHaveURL(/\/search\?q=Breaking/)
+
+    // Verify search input on search page has the query
+    await expect(page.getByPlaceholder('Search by title, actor, or keyword...')).toHaveValue(
+      'Breaking',
+    )
   })
 })
