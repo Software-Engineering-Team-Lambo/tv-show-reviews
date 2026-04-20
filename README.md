@@ -1,16 +1,56 @@
-# Couch Critics
+# Couch Critics TV Show Review Website
+Couch Critics is a full-stack web application designed to allow users to search for, rate, and review television shows that they have watched or are currently watching. This website was developed as a collaborative software engineering project at the University of Maryland, Baltimore County (UMBC). The platform leverages modern web frameworks and The Movie Database (TMDB) API to deliver media metadata to users.
 
-A TV show review app built with Vue, Fastify, and Prisma. Rate and review your favorite shows!
+## Project Purpose
+After discovering the gap in the current digital landscape for a cataloging service purely for TV shows, we felt motivated to build one of our own. Drawing inspiration from platforms such as Letterboxd, MyAnimeList, and IMDb, Couch Critics aims to provide a website that allows users to catalog their ​​completed, in-progress, and planned shows. Additionally, we enable users to post public ratings and reviews in order to foster a community of television enthusiasts. For this purpose, we will curate a searchable collection of television shows and corresponding metadata.
 
-## What's Inside
+## Project Goal
+The primary goal of this project was to build a comprehensive, full-stack TV show review platform. This required designing an intuitive and responsive user interface, engineering an efficient backend, and implementing robust security measures. To simulate a professional software development environment, our team utilized Agile and Scrum methodologies to effectively meet our deadlines.
 
-- **Backend:** Fastify API with Prisma (MySQL database)
-- **Frontend:** Vue 3 with Vite for fast development
-- Everything is written in TypeScript
+## Technologies Used
+* **Backend:** Fastify API with Prisma ORM (MySQL database)
+* **Frontend:** Vue 3 with Vite for fast development
+* **Language:** TypeScript across the entire stack
+* **Security:** JWT Authentication, Argon2 Password Hashing
+* **DevOps:** Docker, Dev Containers, GitHub Actions (CI/CD)
+* **External APIs:** The Movie Database (TMDB) API
+
+## Website Functionalities
+* **User Accounts:**
+    * Sign Up
+    * Sign In
+* **TV Show Management:**
+    * Search Shows
+    * Read Show Details
+    * Add a Show to the Database
+* **Review Management:**
+    * Add Show Reviews
+    * Delete Reviews
+* **Platform Overview:**
+    * See All Shows and Reviews
+
+## Key Features
+* **Lightning-Fast Search:** Optimized database indexing and query structures that achieve search and response latencies of under 400ms.
+* **Secure User Accounts:** Secure user authentication utilizing Argon2 hashing and JSON Web Tokens (JWT) for session management.
+* **API Data Usage:** Real-time fetching and display of TV show metadata, images, and summaries.
+* **Automated Testing:** Integrated CI/CD pipelines to ensure code reliability and prevent errors during development.
+
+## 👥 Team Roles
+This project was developed collaboratively by a team of students. Key responsibilities included:
+* **Lead Developer & System Architect (Joseph Charles):** Directed the overall system architecture, enforced verison control, and coordinated Agile development sprints to ensure seamless full-stack integration.
+* **Frontend & UI Development (Mikhail Mallari, Hailey Davio):** Integrated the TMDB API to dynamically fetch media, extracted complex data for show details, and built responsive, user-centric interfaces using Vue and TypeScript.
+* **Backend Development (Chris DeBoy, Manav Narendra, Kevin Kisembo):** Architected the Fastify API, designed the relational database schema utilizing Prisma ORM (MySQL), and implemented robust JWT/Argon2 security protocols.
+* **DevOps & Validation Testing (Kevin Kisembo, Annamaria Palmiero):** Executed comprehensive quality assurance testing, and maintained version-controlled project documentation.
+
+<img width="1918" height="906" alt="couch_critics_show_page" src="https://github.com/user-attachments/assets/f8334bf6-8597-4f1c-aa4e-b444d2361605" />
+<img width="1918" height="913" alt="couch_critics_homepage" src="https://github.com/user-attachments/assets/29d2387f-a3ca-4e10-8944-2f2caaf712da" />
+
+## Lessons Learned
+Through this project, our team learned about the importance of disciplined version control, thorough documentation, and clear communication. By adopting Agile and Scrum methodologies, our team learned how to break down complex features into manageable sprints, conduct effective stand-ups, and adapt to shifting project requirements. Ultimately, taking this platform from conceptual UI and database designs to deploying a fully functioning, full-stack application provided invaluable, hands-on experience with the complete software development life cycle.
 
 ## Getting Started
 
-### 🚀 Quick Start with Dev Container (Easiest!)
+### Quick Start with Dev Container (Easiest!)
 
 #### If you use the dev container, you don't need to do the manual setup below. Just follow these steps:
 
@@ -111,7 +151,7 @@ npm run seed
 cd ../..
 ```
 
-### 6. Start Developing! 🚀
+### 6. Start Developing!
 
 ```bash
 npm run dev
