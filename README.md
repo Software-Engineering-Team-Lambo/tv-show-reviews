@@ -35,12 +35,12 @@ The primary goal of this project was to build a comprehensive, full-stack TV sho
 * **API Data Usage:** Real-time fetching and display of TV show metadata, images, and summaries.
 * **Automated Testing:** Integrated CI/CD pipelines to ensure code reliability and prevent errors during development.
 
-## My Role and Contributions
-Working within a cross-functional team, I served primarily as a **Frontend & UI Developer**. My specific contributions included:
-* Integrating the TMDB API to dynamically fetch and render high-quality TV show posters across the home screen and individual show pages.
-* Extracting and organizing complex API data to seamlessly display essential show information, including descriptions, cast lists, season counts, and release dates.
-* Creating a responsive, user-centric interfaces using Vue and TypeScript.
-* Writing and maintaining a suite of version-controlled project documentation, including the UI/System Requirements and the Software Design Document (SDD).
+## 👥 Team Roles
+This project was developed collaboratively by a team of students. Key responsibilities included:
+* **Lead Developer & System Architect (Joseph Charles):** Directed the overall system architecture, enforced verison control, and coordinated Agile development sprints to ensure seamless full-stack integration.
+* **Frontend & UI Development (Mikhail Mallari, Hailey Davio):** Integrated the TMDB API to dynamically fetch media, extracted complex data for show details, and built responsive, user-centric interfaces using Vue and TypeScript.
+* **Backend Development (Chris DeBoy, Manav Narendra, Kevin Kisembo):** Architected the Fastify API, designed the relational database schema utilizing Prisma ORM (MySQL), and implemented robust JWT/Argon2 security protocols.
+* **DevOps & Validation Testing (Kevin Kisembo, Annamaria Palmiero):** Executed comprehensive quality assurance testing, and maintained version-controlled project documentation.
 
 <img width="1918" height="906" alt="couch_critics_show_page" src="https://github.com/user-attachments/assets/f8334bf6-8597-4f1c-aa4e-b444d2361605" />
 <img width="1918" height="913" alt="couch_critics_homepage" src="https://github.com/user-attachments/assets/29d2387f-a3ca-4e10-8944-2f2caaf712da" />
